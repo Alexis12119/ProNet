@@ -124,7 +124,7 @@ export function ConversationList({
                       </div>
                     </div>
                     {otherParticipant.headline && (
-                      <p className="text-sm text-gray-600 truncate mb-1">{otherParticipant.headline}</p>
+                      <p className="text-sm text-gray-700 font-medium truncate mb-1">{otherParticipant.headline}</p>
                     )}
                     {conversation.lastMessage && (
                       <p className="text-sm text-gray-500 truncate">
