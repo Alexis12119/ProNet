@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, X, Save, Upload } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { AddSkillDialog } from "@/components/profile/add-skill-dialog";
 import { resizeImage } from "@/lib/image-utils";
 
 interface UserProfile {
@@ -31,9 +32,6 @@ interface Skill {
 
 export default function EditProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [newSkill, setNewSkill] = useState("");
-  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,12 +39,13 @@ export default function EditProfilePage() {
   const router = useRouter();
   const supabase = createClient();
 
-  useEffect(() => {
-    loadProfile();
-    loadAvailableSkills();
-  }, []);
+   useEffect(() => {
+     loadProfile();
+   }, []);
 
-  const loadProfile = async () => {
+
+
+   const loadProfile = async () => {
     try {
       const {
         data: { user },
@@ -66,22 +65,7 @@ export default function EditProfilePage() {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Get user skills
-      const { data: userSkills, error: skillsError } = await supabase
-        .from("user_skills")
-        .select(
-          `
-          id,
-          skills (
-            id,
-            name
-          )
-        `,
-        )
-        .eq("user_id", user.id);
 
-      if (skillsError) throw skillsError;
-       setSkills(userSkills?.map((us) => (us.skills as any)) || []);
     } catch (error) {
       console.error("Error loading profile:", error);
       setError("Failed to load profile");
@@ -90,14 +74,7 @@ export default function EditProfilePage() {
     }
   };
 
-  const loadAvailableSkills = async () => {
-    const { data: skillsData } = await supabase
-      .from("skills")
-      .select("*")
-      .order("name");
 
-    setAvailableSkills(skillsData || []);
-  };
 
   const handleProfileUpdate = (field: keyof UserProfile, value: string) => {
     if (profile) {
@@ -105,63 +82,7 @@ export default function EditProfilePage() {
     }
   };
 
-  const addSkill = async () => {
-    if (!newSkill.trim() || !profile) return;
 
-    try {
-      // Check if skill exists, if not create it
-      let skillId: string;
-      const existingSkill = availableSkills.find(
-        (s) => s.name.toLowerCase() === newSkill.toLowerCase(),
-      );
-
-      if (existingSkill) {
-        skillId = existingSkill.id;
-      } else {
-        const { data: newSkillData, error: skillError } = await supabase
-          .from("skills")
-          .insert({ name: newSkill })
-          .select()
-          .single();
-
-        if (skillError) throw skillError;
-        skillId = newSkillData.id;
-        setAvailableSkills([...availableSkills, newSkillData]);
-      }
-
-      // Add skill to user
-      const { error: userSkillError } = await supabase
-        .from("user_skills")
-        .insert({ user_id: profile.id, skill_id: skillId });
-
-      if (userSkillError) throw userSkillError;
-
-      const newSkillObj = { id: skillId, name: newSkill };
-      setSkills([...skills, newSkillObj]);
-      setNewSkill("");
-    } catch (error) {
-      console.error("Error adding skill:", error);
-      setError("Failed to add skill");
-    }
-  };
-
-  const removeSkill = async (skillId: string) => {
-    if (!profile) return;
-
-    try {
-      const { error } = await supabase
-        .from("user_skills")
-        .delete()
-        .eq("user_id", profile.id)
-        .eq("skill_id", skillId);
-
-      if (error) throw error;
-      setSkills(skills.filter((s) => s.id !== skillId));
-    } catch (error) {
-      console.error("Error removing skill:", error);
-      setError("Failed to remove skill");
-    }
-  };
 
 
 
@@ -316,7 +237,7 @@ export default function EditProfilePage() {
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage
-                    src={profile.profile_image_url || "/placeholder.svg"}
+                    src={profile.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"}
                     alt={profile.full_name}
                   />
                   <AvatarFallback className="text-lg font-semibold bg-blue-100 text-blue-700">
@@ -404,51 +325,7 @@ export default function EditProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Skills */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add Skill */}
-              <div className="flex space-x-2">
-                <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Add a skill..."
-                  onKeyPress={(e) => e.key === "Enter" && addSkill()}
-                />
-                <Button onClick={addSkill} disabled={!newSkill.trim()}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
 
-              {/* Current Skills */}
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill) => (
-                  <Badge
-                    key={skill.id}
-                    variant="secondary"
-                    className="px-3 py-1 text-sm"
-                  >
-                    {skill.name}
-                    <button
-                      onClick={() => removeSkill(skill.id)}
-                      className="ml-2 text-gray-500 hover:text-red-500"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-
-              {skills.length === 0 && (
-                <p className="text-gray-500 text-sm">
-                  No skills added yet. Add your first skill above.
-                </p>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

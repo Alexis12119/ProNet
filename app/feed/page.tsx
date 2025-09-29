@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { CreatePost } from "@/components/feed/create-post"
@@ -30,7 +30,7 @@ interface User {
   profile_image_url?: string
 }
 
-export default function FeedPage() {
+function FeedContent() {
   const [posts, setPosts] = useState<Post[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -323,5 +323,20 @@ export default function FeedPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading feed...</p>
+        </div>
+      </div>
+    }>
+      <FeedContent />
+    </Suspense>
   )
 }

@@ -238,6 +238,27 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       }
     }
 
+    const handleSkillDeleted = async (skillId: string) => {
+      if (!currentUser || !profileUser) return
+
+      try {
+        const { error } = await supabase
+          .from("user_skills")
+          .delete()
+          .eq("user_id", currentUser.id)
+          .eq("skill_id", skillId)
+
+        if (error) throw error
+
+        // Update local state
+        setSkills(prev => prev.filter(s => s.id !== skillId))
+        toast.success("Skill removed successfully!")
+      } catch (error) {
+        console.error("Error removing skill:", error)
+        toast.error("Failed to remove skill")
+      }
+    }
+
     const handleProjectUpdated = (updatedProject: any) => {
       setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p))
     }
@@ -305,6 +326,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                  isOwnProfile={isOwnProfile}
                  userId={profileUser.id}
                  onSkillAdded={loadProfile}
+                 onSkillDeleted={handleSkillDeleted}
                />
             </div>
           </div>

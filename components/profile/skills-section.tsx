@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { AddSkillDialog } from "./add-skill-dialog"
 
 interface Skill {
@@ -17,9 +17,10 @@ interface SkillsSectionProps {
   isOwnProfile: boolean
   userId?: string
   onSkillAdded?: () => void
+  onSkillDeleted?: (skillId: string) => void
 }
 
-export function SkillsSection({ skills, isOwnProfile, userId, onSkillAdded }: SkillsSectionProps) {
+export function SkillsSection({ skills, isOwnProfile, userId, onSkillAdded, onSkillDeleted }: SkillsSectionProps) {
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -40,14 +41,19 @@ export function SkillsSection({ skills, isOwnProfile, userId, onSkillAdded }: Sk
       <CardContent>
         {skills.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <Badge key={skill.id} variant="secondary" className="px-3 py-1 text-sm">
-                {skill.name}
-                {skill.endorsements_count && skill.endorsements_count > 0 && (
-                  <span className="ml-2 text-xs text-gray-500">({skill.endorsements_count})</span>
-                )}
-              </Badge>
-            ))}
+             {skills.map((skill) => (
+               <Badge key={skill.id} variant="secondary" className="px-3 py-1 text-sm flex items-center space-x-1">
+                 <span>{skill.name}</span>
+                 {isOwnProfile && (
+                   <button
+                     onClick={() => onSkillDeleted?.(skill.id)}
+                     className="ml-1 text-gray-500 hover:text-red-500"
+                   >
+                     <X className="h-3 w-3" />
+                   </button>
+                 )}
+               </Badge>
+             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">

@@ -70,10 +70,10 @@ export function ConnectionCard({ connection, onAccept, onReject, onMessage }: Co
           <div className="flex items-start space-x-4">
             <Link href={`/profile/${connection.user.id}`}>
               <Avatar className="h-16 w-16">
-                <AvatarImage
-                  src={connection.user.profile_image_url || "/placeholder.svg"}
-                  alt={connection.user.full_name}
-                />
+                 <AvatarImage
+                   src={connection.user.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"}
+                   alt={connection.user.full_name}
+                 />
                 <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold text-lg">
                   {getInitials(connection.user.full_name)}
                 </AvatarFallback>

@@ -124,10 +124,10 @@ export function ChatInterface({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage
-                src={otherParticipant.profile_image_url || "/placeholder.svg"}
-                alt={otherParticipant.full_name}
-              />
+               <AvatarImage
+                 src={otherParticipant.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"}
+                 alt={otherParticipant.full_name}
+               />
               <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
                 {getInitials(otherParticipant.full_name)}
               </AvatarFallback>
@@ -152,7 +152,7 @@ export function ChatInterface({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {Object.entries(groupedMessages).map(([date, dayMessages]) => (
           <div key={date}>
             {/* Date Separator */}
@@ -178,10 +178,10 @@ export function ChatInterface({
                 >
                   {!isFromCurrentUser && (
                     <Avatar className={`h-8 w-8 ${showAvatar ? "opacity-100" : "opacity-0"}`}>
-                      <AvatarImage
-                        src={otherParticipant.profile_image_url || "/placeholder.svg"}
-                        alt={otherParticipant.full_name}
-                      />
+                       <AvatarImage
+                         src={otherParticipant.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"}
+                         alt={otherParticipant.full_name}
+                       />
                       <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
                         {getInitials(otherParticipant.full_name)}
                       </AvatarFallback>
