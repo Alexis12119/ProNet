@@ -39,6 +39,25 @@ export function Navigation() {
 
   useEffect(() => {
     loadUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("id, full_name, profile_image_url")
+          .eq("id", session.user.id)
+          .single();
+
+        setUser(profile);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUser = async () => {
