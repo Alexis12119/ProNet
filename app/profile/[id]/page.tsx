@@ -1,119 +1,134 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { notFound, redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { ProfileHeader } from "@/components/profile/profile-header"
-import { SkillsSection } from "@/components/profile/skills-section"
-import { ProjectsSection } from "@/components/profile/projects-section"
-import { AddProjectDialog } from "@/components/profile/add-project-dialog"
-import { AddSkillDialog } from "@/components/profile/add-skill-dialog"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { ProfileHeader } from "@/components/profile/profile-header";
+import { SkillsSection } from "@/components/profile/skills-section";
+import { ProjectsSection } from "@/components/profile/projects-section";
+import { AddProjectDialog } from "@/components/profile/add-project-dialog";
+import { AddSkillDialog } from "@/components/profile/add-skill-dialog";
+import { toast } from "sonner";
 
 interface ProfilePageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default function ProfilePage({ params }: ProfilePageProps) {
-  const [profileUser, setProfileUser] = useState<any>(null)
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [skills, setSkills] = useState<any[]>([])
-  const [projects, setProjects] = useState<any[]>([])
-  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending" | "connected">("none")
-  const [averageRating, setAverageRating] = useState(0)
-  const [totalJobs, setTotalJobs] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<
+    "none" | "pending" | "connected"
+  >("none");
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter()
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    loadProfile()
+    loadProfile();
 
     // Set up real-time subscription for skills
     const channel = supabase
-      .channel('skills-changes')
+      .channel("skills-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'user_skills'
+          event: "*",
+          schema: "public",
+          table: "user_skills",
         },
         (payload) => {
-          console.log('Skill change detected:', payload)
-          if (payload.new?.user_id === profileUser?.id || payload.old?.user_id === profileUser?.id) {
-            loadProfile()
+          console.log("Skill change detected:", payload);
+          if (
+            payload.new?.user_id === profileUser?.id ||
+            payload.old?.user_id === profileUser?.id
+          ) {
+            loadProfile();
           }
-        }
+        },
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      channel.unsubscribe()
-    }
-   }, [profileUser?.id])
+      channel.unsubscribe();
+    };
+  }, []);
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading) {
-        setIsLoading(false)
-        setError("Loading timed out. Please refresh the page.")
+        setIsLoading(false);
+        setError("Loading timed out. Please refresh the page.");
       }
-    }, 10000) // 10 seconds
+    }, 10000); // 10 seconds
 
-    return () => clearTimeout(timeout)
-  }, [isLoading])
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   const loadProfile = async () => {
     try {
-      setIsLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      setIsLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        redirect("/auth/login")
-        return
+        redirect("/auth/login");
+        return;
       }
-      setCurrentUser(user)
+      setCurrentUser(user);
 
-      const { id } = await params
-      const { data: profileData, error: userError } = await supabase.from("users").select("*").eq("id", id).single()
+      const { id } = await params;
+      const { data: profileData, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", id)
+        .single();
 
       if (userError || !profileData) {
-        notFound()
-        return
+        notFound();
+        return;
       }
-      setProfileUser(profileData)
+      setProfileUser(profileData);
 
-      const isOwnProfile = user.id === id
+      const isOwnProfile = user.id === id;
 
       // Get user skills
       const { data: userSkills } = await supabase
         .from("user_skills")
-        .select(`
+        .select(
+          `
           id,
           skills (
             id,
             name
           )
-        `)
-        .eq("user_id", id)
+        `,
+        )
+        .eq("user_id", id);
 
-      setSkills(userSkills?.map((us: any) => ({
-        id: us.skills.id,
-        name: us.skills.name,
-        endorsements_count: 0,
-      })) || [])
+      setSkills(
+        userSkills?.map((us: any) => ({
+          id: us.skills.id,
+          name: us.skills.name,
+          endorsements_count: 0,
+        })) || [],
+      );
 
       // Get user projects
       const { data: projectsData } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", id)
-        .order("created_at", { ascending: false })
-      setProjects(projectsData || [])
+        .order("created_at", { ascending: false });
+      setProjects(projectsData || []);
 
       // Check connection status
       if (!isOwnProfile) {
@@ -123,163 +138,180 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           .or(
             `and(requester_id.eq.${user.id},receiver_id.eq.${id}),and(requester_id.eq.${id},receiver_id.eq.${user.id})`,
           )
-          .single()
+          .single();
 
-        setConnectionStatus(connection ? (connection.status === "accepted" ? "connected" : "pending") : "none")
+        setConnectionStatus(
+          connection
+            ? connection.status === "accepted"
+              ? "connected"
+              : "pending"
+            : "none",
+        );
       }
 
       // Get jobs and ratings
       const { data: jobsData } = await supabase
         .from("jobs_history")
-        .select(`
+        .select(
+          `
           id,
           feedback (
             rating
           )
-        `)
-        .eq("user_id", id)
+        `,
+        )
+        .eq("user_id", id);
 
-      const jobsWithRatings = jobsData?.filter((job: any) => job.feedback && job.feedback.length > 0) || []
-      setTotalJobs(jobsData?.length || 0)
+      const jobsWithRatings =
+        jobsData?.filter(
+          (job: any) => job.feedback && job.feedback.length > 0,
+        ) || [];
+      setTotalJobs(jobsData?.length || 0);
       setAverageRating(
         jobsWithRatings.length > 0
-          ? jobsWithRatings.reduce((sum: number, job: any) => sum + (job.feedback[0]?.rating || 0), 0) / jobsWithRatings.length
-          : 0
-      )
+          ? jobsWithRatings.reduce(
+              (sum: number, job: any) => sum + (job.feedback[0]?.rating || 0),
+              0,
+            ) / jobsWithRatings.length
+          : 0,
+      );
     } catch (error) {
-      console.error("Error loading profile:", error)
-      setError("Failed to load profile")
+      console.error("Error loading profile:", error);
+      setError("Failed to load profile");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-   const handleMessage = async () => {
-     if (!currentUser || !profileUser) return
+  const handleMessage = async () => {
+    if (!currentUser || !profileUser) return;
 
-     try {
-       // Ensure user is authenticated
-       const { data: { session } } = await supabase.auth.getSession()
-       if (!session || !session.user) {
-         toast.error("You must be logged in to start a conversation")
-         return
-       }
-
-       // Check if conversation already exists
-       const { data: profileConversations } = await supabase
-         .from("conversation_participants")
-         .select("conversation_id")
-         .eq("user_id", profileUser.id)
-
-       const profileConversationIds = profileConversations?.map(cp => cp.conversation_id) || []
-
-       const { data: existingConv } = await supabase
-         .from("conversation_participants")
-         .select("conversation_id")
-         .eq("user_id", currentUser.id)
-         .in("conversation_id", profileConversationIds)
-
-       if (existingConv && existingConv.length > 0) {
-         // Navigate to existing conversation
-         router.push("/messages")
-         return
-       }
-
-       // Create new conversation
-       const { data: conversation, error: convError } = await supabase
-         .from("conversations")
-         .insert({})
-         .select()
-         .single()
-
-       if (convError) throw convError
-
-       // Add participants
-       const { error: partError } = await supabase
-         .from("conversation_participants")
-         .insert([
-           { conversation_id: conversation.id, user_id: currentUser.id },
-           { conversation_id: conversation.id, user_id: profileUser.id }
-         ])
-
-       if (partError) throw partError
-
-       router.push("/messages")
-       toast.success("Conversation started!")
-     } catch (error) {
-       console.error("Error starting conversation:", error)
-       const message = error instanceof Error ? error.message : "Unknown error"
-       toast.error(`Failed to start conversation: ${message}`)
-     }
-   }
-
-   const handleConnect = async () => {
-     if (!currentUser || !profileUser) return
-
-     try {
-       const { error } = await supabase
-         .from("connections")
-         .insert({
-           requester_id: currentUser.id,
-           receiver_id: profileUser.id,
-           status: "pending"
-         })
-
-       if (error) throw error
-
-       toast.success("Connection request sent!")
-       router.refresh()
-     } catch (error) {
-       const message = error instanceof Error ? error.message : "Unknown error"
-       console.error("Error sending connection request:", message)
-       toast.error(`Failed to send connection request: ${message}`)
-     }
-    }
-
-    const handleProjectAdded = async () => {
-      // Refresh projects when a new project is added
-      try {
-        const { data: projectsData } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("user_id", profileUser.id)
-          .order("created_at", { ascending: false })
-        setProjects(projectsData || [])
-      } catch (error) {
-        console.error("Error refreshing projects:", error)
+    try {
+      // Ensure user is authenticated
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session || !session.user) {
+        toast.error("You must be logged in to start a conversation");
+        return;
       }
-    }
 
-    const handleSkillDeleted = async (skillId: string) => {
-      if (!currentUser || !profileUser) return
+      // Check if conversation already exists
+      const { data: profileConversations } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", profileUser.id);
 
-      try {
-        const { error } = await supabase
-          .from("user_skills")
-          .delete()
-          .eq("user_id", currentUser.id)
-          .eq("skill_id", skillId)
+      const profileConversationIds =
+        profileConversations?.map((cp) => cp.conversation_id) || [];
 
-        if (error) throw error
+      const { data: existingConv } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", currentUser.id)
+        .in("conversation_id", profileConversationIds);
 
-        // Update local state
-        setSkills(prev => prev.filter(s => s.id !== skillId))
-        toast.success("Skill removed successfully!")
-      } catch (error) {
-        console.error("Error removing skill:", error)
-        toast.error("Failed to remove skill")
+      if (existingConv && existingConv.length > 0) {
+        // Navigate to existing conversation
+        router.push("/messages");
+        return;
       }
-    }
 
-    const handleProjectUpdated = (updatedProject: any) => {
-      setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p))
-    }
+      // Create new conversation
+      const { data: conversation, error: convError } = await supabase
+        .from("conversations")
+        .insert({})
+        .select()
+        .single();
 
-    const handleProjectDeleted = (projectId: string) => {
-      setProjects(prev => prev.filter(p => p.id !== projectId))
-    }
+      if (convError) throw convError;
 
-   if (isLoading) {
+      // Add participants
+      const { error: partError } = await supabase
+        .from("conversation_participants")
+        .insert([
+          { conversation_id: conversation.id, user_id: currentUser.id },
+          { conversation_id: conversation.id, user_id: profileUser.id },
+        ]);
+
+      if (partError) throw partError;
+
+      router.push("/messages");
+      toast.success("Conversation started!");
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to start conversation: ${message}`);
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!currentUser || !profileUser) return;
+
+    try {
+      const { error } = await supabase.from("connections").insert({
+        requester_id: currentUser.id,
+        receiver_id: profileUser.id,
+        status: "pending",
+      });
+
+      if (error) throw error;
+
+      toast.success("Connection request sent!");
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error sending connection request:", message);
+      toast.error(`Failed to send connection request: ${message}`);
+    }
+  };
+
+  const handleProjectAdded = async () => {
+    // Refresh projects when a new project is added
+    try {
+      const { data: projectsData } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", profileUser.id)
+        .order("created_at", { ascending: false });
+      setProjects(projectsData || []);
+    } catch (error) {
+      console.error("Error refreshing projects:", error);
+    }
+  };
+
+  const handleSkillDeleted = async (skillId: string) => {
+    if (!currentUser || !profileUser) return;
+
+    try {
+      const { error } = await supabase
+        .from("user_skills")
+        .delete()
+        .eq("user_id", currentUser.id)
+        .eq("skill_id", skillId);
+
+      if (error) throw error;
+
+      // Update local state
+      setSkills((prev) => prev.filter((s) => s.id !== skillId));
+      toast.success("Skill removed successfully!");
+    } catch (error) {
+      console.error("Error removing skill:", error);
+      toast.error("Failed to remove skill");
+    }
+  };
+
+  const handleProjectUpdated = (updatedProject: any) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p)),
+    );
+  };
+
+  const handleProjectDeleted = (projectId: string) => {
+    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -287,7 +319,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           <p className="mt-4 text-gray-600">Loading profile...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -303,7 +335,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   if (!profileUser) {
@@ -313,10 +345,10 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           <p className="text-gray-600">Profile not found</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const isOwnProfile = currentUser?.id === profileUser.id
+  const isOwnProfile = currentUser?.id === profileUser.id;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -334,32 +366,35 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-               <ProjectsSection
-                 projects={projects}
-                 isOwnProfile={isOwnProfile}
-                 userId={profileUser.id}
-                 onProjectUpdate={handleProjectUpdated}
-                 onProjectDelete={handleProjectDeleted}
-               />
-               {isOwnProfile && (
-                 <div className="hidden">
-                   <AddProjectDialog userId={profileUser.id} onProjectAdded={handleProjectAdded} />
-                 </div>
-               )}
+              <ProjectsSection
+                projects={projects}
+                isOwnProfile={isOwnProfile}
+                userId={profileUser.id}
+                onProjectUpdate={handleProjectUpdated}
+                onProjectDelete={handleProjectDeleted}
+              />
+              {isOwnProfile && (
+                <div className="hidden">
+                  <AddProjectDialog
+                    userId={profileUser.id}
+                    onProjectAdded={handleProjectAdded}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
-               <SkillsSection
-                 skills={skills}
-                 isOwnProfile={isOwnProfile}
-                 userId={profileUser.id}
-                 onSkillAdded={loadProfile}
-                 onSkillDeleted={handleSkillDeleted}
-               />
+              <SkillsSection
+                skills={skills}
+                isOwnProfile={isOwnProfile}
+                userId={profileUser.id}
+                onSkillAdded={loadProfile}
+                onSkillDeleted={handleSkillDeleted}
+              />
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

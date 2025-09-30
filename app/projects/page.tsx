@@ -39,6 +39,7 @@ interface Project {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [platformFilter, setPlatformFilter] = useState<string>("all")
 
@@ -47,6 +48,18 @@ export default function ProjectsPage() {
   useEffect(() => {
     fetchProjects()
   }, [])
+
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        setLoading(false)
+        setError("Loading timed out. Please refresh the page.")
+      }
+    }, 10000) // 10 seconds
+
+    return () => clearTimeout(timeout)
+  }, [loading])
 
   const fetchProjects = async () => {
     try {
@@ -60,11 +73,12 @@ export default function ProjectsPage() {
 
       if (error) throw error
       setProjects(data || [])
-    } catch (error) {
-      console.error("Error fetching projects:", error)
-    } finally {
-      setLoading(false)
-    }
+     } catch (error) {
+       console.error("Error fetching projects:", error)
+       setError("Failed to load projects")
+     } finally {
+       setLoading(false)
+     }
   }
 
   const getProjectIcon = (link?: string) => {
@@ -126,6 +140,22 @@ export default function ProjectsPage() {
               <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     )

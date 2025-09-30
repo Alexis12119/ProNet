@@ -34,38 +34,51 @@ function FeedContent() {
   const [posts, setPosts] = useState<Post[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
   const postsChannelRef = useRef<RealtimeChannel | null>(null)
 
-  useEffect(() => {
-    loadUserAndPosts()
+   useEffect(() => {
+     loadUserAndPosts()
 
-    // Set up real-time subscription for posts
-    const channel = supabase
-      .channel('posts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts'
-        },
-        (payload) => {
-          console.log('Post change detected:', payload)
-          // Reload posts when changes occur
-          loadUserAndPosts()
-        }
-      )
-      .subscribe()
+     // Set up real-time subscription for posts
+     const channel = supabase
+       .channel('posts-changes')
+       .on(
+         'postgres_changes',
+         {
+           event: '*',
+           schema: 'public',
+           table: 'posts'
+         },
+         (payload) => {
+           console.log('Post change detected:', payload)
+           // Reload posts when changes occur
+           loadUserAndPosts()
+         }
+       )
+       .subscribe()
 
-    postsChannelRef.current = channel
+     postsChannelRef.current = channel
 
-    return () => {
-      channel.unsubscribe()
-    }
-  }, [])
+     return () => {
+       channel.unsubscribe()
+     }
+   }, [])
+
+   // Add a timeout to prevent infinite loading
+   useEffect(() => {
+     const timeout = setTimeout(() => {
+       if (isLoading) {
+         setIsLoading(false)
+         setError("Loading timed out. Please refresh the page.")
+       }
+     }, 10000) // 10 seconds
+
+     return () => clearTimeout(timeout)
+   }, [isLoading])
 
   useEffect(() => {
     // Scroll to post if hash is present
@@ -162,11 +175,12 @@ function FeedContent() {
       )
 
       setPosts(transformedPosts)
-    } catch (error) {
-      console.error("Error loading feed:", error)
-    } finally {
-      setIsLoading(false)
-    }
+     } catch (error) {
+       console.error("Error loading feed:", error)
+       setError("Failed to load feed")
+     } finally {
+       setIsLoading(false)
+     }
   }
 
   const handleCreatePost = async (content: string, mediaUrl?: string) => {
@@ -290,6 +304,22 @@ function FeedContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading feed...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     )

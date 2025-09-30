@@ -27,6 +27,7 @@ export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -34,6 +35,18 @@ export default function ConnectionsPage() {
   useEffect(() => {
     loadConnections()
   }, [])
+
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false)
+        setError("Loading timed out. Please refresh the page.")
+      }
+    }, 10000) // 10 seconds
+
+    return () => clearTimeout(timeout)
+  }, [isLoading])
 
   const loadConnections = async () => {
     try {
@@ -87,11 +100,12 @@ export default function ConnectionsPage() {
       )
 
       setConnections(connectionsWithUsers)
-    } catch (error) {
-      console.error("Error loading connections:", error)
-    } finally {
-      setIsLoading(false)
-    }
+     } catch (error) {
+       console.error("Error loading connections:", error)
+       setError("Failed to load connections")
+     } finally {
+       setIsLoading(false)
+     }
   }
 
   const handleAcceptConnection = async (connectionId: string) => {
@@ -139,6 +153,22 @@ export default function ConnectionsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading connections...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     )
