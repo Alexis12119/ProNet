@@ -86,9 +86,7 @@ export function ProfileHeader({
                   {user.full_name}
                 </h1>
                 {user.headline && (
-                  <p className="text-lg text-gray-200 mt-1 font-medium">
-                    {user.headline}
-                  </p>
+                  <p className="text-lg text-gray-600 mt-1">{user.headline}</p>
                 )}
 
                 {averageRating && averageRating > 0 && (

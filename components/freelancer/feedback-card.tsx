@@ -105,7 +105,7 @@ export function FeedbackCard({ feedback }: FeedbackCardProps) {
               <Link href={`/profile/${feedback.client.id}`} className="hover:underline">
                 <p className="font-medium text-gray-900">{feedback.client.full_name}</p>
               </Link>
-              {feedback.client.headline && <p className="text-sm text-gray-700 font-medium">{feedback.client.headline}</p>}
+              {feedback.client.headline && <p className="text-sm text-gray-600">{feedback.client.headline}</p>}
             </div>
           </div>
           <div className="text-right">

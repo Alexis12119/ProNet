@@ -188,13 +188,12 @@ export default function MessagesPage() {
           new Date(a.lastMessage?.created_at || a.updated_at).getTime(),
       )
 
-       setConversations(conversationsWithDetails)
+      setConversations(conversationsWithDetails)
      } catch (error) {
        console.error("Error loading conversations:", error instanceof Error ? error.message : error)
-       setConversations([])
      } finally {
-       setIsLoading(false)
-     }
+      setIsLoading(false)
+    }
   }
 
   const loadMessages = async (conversationId: string) => {

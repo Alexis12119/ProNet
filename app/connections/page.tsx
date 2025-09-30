@@ -35,74 +35,64 @@ export default function ConnectionsPage() {
     loadConnections()
   }, [])
 
-   const loadConnections = async () => {
-     try {
-       setIsLoading(true)
-       const {
-         data: { user },
-       } = await supabase.auth.getUser()
-       if (!user) {
-         router.push("/auth/login")
-         return
-       }
+  const loadConnections = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.push("/auth/login")
+        return
+      }
 
-       setCurrentUserId(user.id)
+      setCurrentUserId(user.id)
 
-       // Get all connections (sent and received)
-       const { data: connectionsData, error } = await supabase
-         .from("connections")
-         .select(`
-           id,
-           status,
-           created_at,
-           requester_id,
-           receiver_id
-         `)
-         .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-         .order("created_at", { ascending: false })
+      // Get all connections (sent and received)
+      const { data: connectionsData, error } = await supabase
+        .from("connections")
+        .select(`
+          id,
+          status,
+          created_at,
+          requester_id,
+          receiver_id
+        `)
+        .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
 
-       if (error) {
-         console.error("Supabase error:", error)
-         throw error
-       }
+      if (error) throw error
 
-       // Get user details for each connection
-       const connectionsWithUsers: Connection[] = await Promise.all(
-         (connectionsData || []).map(async (conn) => {
-           const otherUserId = conn.requester_id === user.id ? conn.receiver_id : conn.requester_id
-           const isRequester = conn.requester_id === user.id
+      // Get user details for each connection
+      const connectionsWithUsers: Connection[] = await Promise.all(
+        (connectionsData || []).map(async (conn) => {
+          const otherUserId = conn.requester_id === user.id ? conn.receiver_id : conn.requester_id
+          const isRequester = conn.requester_id === user.id
 
-           const { data: userData, error: userError } = await supabase.from("users").select("*").eq("id", otherUserId).single()
+          const { data: userData } = await supabase.from("users").select("*").eq("id", otherUserId).single()
 
-           if (userError) {
-             console.error("Error fetching user data:", userError)
-             throw userError
-           }
+          return {
+            id: conn.id,
+            status: conn.status,
+            created_at: conn.created_at,
+            user: {
+              id: userData.id,
+              full_name: userData.full_name,
+              headline: userData.headline,
+              profile_image_url: userData.profile_image_url,
+              location: userData.location,
+            },
+            isRequester,
+          }
+        }),
+      )
 
-           return {
-             id: conn.id,
-             status: conn.status,
-             created_at: conn.created_at,
-             user: {
-               id: userData.id,
-               full_name: userData.full_name,
-               headline: userData.headline,
-               profile_image_url: userData.profile_image_url,
-               location: userData.location,
-             },
-             isRequester,
-           }
-         }),
-       )
-
-       setConnections(connectionsWithUsers)
-     } catch (error) {
-       console.error("Error loading connections:", error)
-       setConnections([])
-     } finally {
-       setIsLoading(false)
-     }
-   }
+      setConnections(connectionsWithUsers)
+    } catch (error) {
+      console.error("Error loading connections:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleAcceptConnection = async (connectionId: string) => {
     try {

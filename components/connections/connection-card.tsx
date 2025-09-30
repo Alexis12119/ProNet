@@ -83,7 +83,7 @@ export function ConnectionCard({ connection, onAccept, onReject, onMessage }: Co
               <Link href={`/profile/${connection.user.id}`} className="hover:underline">
                 <h3 className="font-semibold text-gray-900 text-lg">{connection.user.full_name}</h3>
               </Link>
-              {connection.user.headline && <p className="text-gray-700 mt-1 font-medium">{connection.user.headline}</p>}
+              {connection.user.headline && <p className="text-gray-600 mt-1">{connection.user.headline}</p>}
               {connection.user.location && <p className="text-sm text-gray-500 mt-1">{connection.user.location}</p>}
               <div className="mt-2">{getStatusBadge()}</div>
             </div>

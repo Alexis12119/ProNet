@@ -134,7 +134,7 @@ export function ChatInterface({
             </Avatar>
             <div>
               <h3 className="font-semibold text-gray-900">{otherParticipant.full_name}</h3>
-              {otherParticipant.headline && <p className="text-sm text-gray-700 font-medium">{otherParticipant.headline}</p>}
+              {otherParticipant.headline && <p className="text-sm text-gray-600">{otherParticipant.headline}</p>}
             </div>
           </div>
           <div className="flex items-center space-x-2">
