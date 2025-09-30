@@ -89,13 +89,25 @@ export default function MessagesPage() {
      };
    }, [selectedConversationId]);
 
-   // Handle URL-based conversation selection
+   // Handle URL and localStorage-based conversation selection
    useEffect(() => {
      const conversationIdFromUrl = searchParams.get("conversation");
+     const conversationIdFromStorage = localStorage.getItem("selectedConversationId");
+
      if (conversationIdFromUrl && conversations.length > 0) {
        const conversationExists = conversations.some(conv => conv.id === conversationIdFromUrl);
        if (conversationExists) {
          setSelectedConversationId(conversationIdFromUrl);
+         localStorage.setItem("selectedConversationId", conversationIdFromUrl);
+       }
+     } else if (conversationIdFromStorage && conversations.length > 0) {
+       const conversationExists = conversations.some(conv => conv.id === conversationIdFromStorage);
+       if (conversationExists) {
+         setSelectedConversationId(conversationIdFromStorage);
+         // Update URL to reflect the stored conversation
+         const newUrl = new URL(window.location.href);
+         newUrl.searchParams.set("conversation", conversationIdFromStorage);
+         window.history.replaceState({}, "", newUrl.toString());
        }
      }
    }, [searchParams, conversations]);
@@ -273,13 +285,14 @@ export default function MessagesPage() {
     }
    };
 
-   const handleConversationSelect = (conversationId: string) => {
-     setSelectedConversationId(conversationId);
-     // Update URL without triggering a page reload
-     const newUrl = new URL(window.location.href);
-     newUrl.searchParams.set("conversation", conversationId);
-     window.history.replaceState({}, "", newUrl.toString());
-   };
+    const handleConversationSelect = (conversationId: string) => {
+      setSelectedConversationId(conversationId);
+      // Update URL and localStorage
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("conversation", conversationId);
+      window.history.replaceState({}, "", newUrl.toString());
+      localStorage.setItem("selectedConversationId", conversationId);
+    };
 
    const handleSendMessage = async (content: string, attachments?: any[]) => {
     if (!selectedConversationId || !currentUserId) return;
