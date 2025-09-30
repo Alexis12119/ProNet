@@ -75,45 +75,47 @@ export default function FreelancerPage({ params }: FreelancerPageProps) {
       if (freelancerError) throw freelancerError
       setFreelancer(freelancerData)
 
-      // Get jobs with client info and feedback
-      const { data: jobsData, error: jobsError } = await supabase
-        .from("jobs_history")
-        .select(`
-          id,
-          title,
-          description,
-          completed_at,
-          client:client_id (
-            id,
-            full_name,
-            headline,
-            profile_image_url
-          )
-        `)
-        .eq("user_id", freelancerId)
-        .order("completed_at", { ascending: false })
+       // Get jobs with client info and feedback
+       const { data: jobsData, error: jobsError } = await supabase
+         .from("jobs_history")
+         .select(`
+           id,
+           title,
+           description,
+           completed_at,
+           client_id
+         `)
+         .eq("user_id", freelancerId)
+         .order("completed_at", { ascending: false })
 
       if (jobsError) throw jobsError
 
-      // Get feedback for each job
-      const jobsWithFeedback: JobWithFeedback[] = await Promise.all(
-        (jobsData || []).map(async (job) => {
-          const { data: feedbackData } = await supabase
-            .from("feedback")
-            .select("id, rating, comment, created_at")
-            .eq("job_id", job.id)
-            .single()
+       // Get feedback for each job
+       const jobsWithFeedback: JobWithFeedback[] = await Promise.all(
+         (jobsData || []).map(async (job) => {
+           const { data: feedbackData } = await supabase
+             .from("feedback")
+             .select("id, rating, comment, created_at")
+             .eq("job_id", job.id)
+             .single()
 
-          return {
-            id: job.id,
-            title: job.title,
-            description: job.description,
-            completed_at: job.completed_at,
-            client: job.client,
-            feedback: feedbackData || undefined,
-          }
-        }),
-      )
+           // Get client info
+           const { data: clientData } = await supabase
+             .from("users")
+             .select("id, full_name, headline, profile_image_url")
+             .eq("id", job.client_id)
+             .single()
+
+           return {
+             id: job.id,
+             title: job.title,
+             description: job.description,
+             completed_at: job.completed_at,
+             client: clientData || { id: '', full_name: '', headline: '', profile_image_url: '' },
+             feedback: feedbackData || undefined,
+           }
+         }),
+       )
 
       setJobs(jobsWithFeedback)
     } catch (error) {
