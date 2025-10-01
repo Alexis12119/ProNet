@@ -224,9 +224,9 @@ function ResetPasswordForm() {
                   </div>
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Updating..." : "Update password"}
-                </Button>
+                 <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg" disabled={isLoading}>
+                   {isLoading ? "Updating..." : "Update password"}
+                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
                 Remember your password?{" "}

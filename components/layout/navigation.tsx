@@ -157,12 +157,12 @@ interface SearchUser {
              </Link>
             <div className="flex items-center space-x-4">
               {/* <ThemeToggle /> */}
-              <Button asChild variant="ghost" className="shadow-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700">
-                <Link href="/auth/login">Sign In</Link>
-              </Button>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                <Link href="/auth/signup">Join Now</Link>
-              </Button>
+               <Button asChild variant="outline" className="shadow-md border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                 <Link href="/auth/login">Sign In</Link>
+               </Button>
+               <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
+                 <Link href="/auth/signup">Join Now</Link>
+               </Button>
             </div>
           </div>
         </div>

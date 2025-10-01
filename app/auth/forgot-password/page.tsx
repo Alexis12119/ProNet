@@ -14,14 +14,30 @@ import { ArrowLeft, Mail } from "lucide-react"
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  const validateEmail = (email: string) => {
+    if (!email) return "Email is required"
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return "Please enter a valid email address"
+    return null
+  }
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
+    setEmailError(null)
+
+    const validationError = validateEmail(email)
+    if (validationError) {
+      setEmailError(validationError)
+      setIsLoading(false)
+      return
+    }
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -93,10 +109,11 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+                {emailError && <p className="text-sm text-red-500">{emailError}</p>}
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset link"}
-                </Button>
+                 <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg" disabled={isLoading}>
+                   {isLoading ? "Sending..." : "Send reset link"}
+                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
                 Remember your password?{" "}

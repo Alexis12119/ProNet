@@ -176,9 +176,9 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
-              <Button type="submit" className="w-full h-10 sm:h-11 bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
+               <Button type="submit" className="w-full h-10 sm:h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg" disabled={isLoading}>
+                 {isLoading ? "Signing in..." : "Sign in"}
+               </Button>
             </form>
             <div className="mt-4 text-center text-sm">
               <Link href="/auth/forgot-password" className="text-blue-600 hover:text-blue-700 font-medium">
