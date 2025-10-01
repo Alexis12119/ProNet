@@ -1,13 +1,15 @@
 "use client";
 
- import { useState, useEffect } from "react";
- import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { ConversationList } from "@/components/messaging/conversation-list";
-import { ChatInterface } from "@/components/messaging/chat-interface";
-import { Card } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+  import { useState, useEffect } from "react";
+  import { useRouter } from "next/navigation";
+  import { createClient } from "@/lib/supabase/client";
+  import { ConversationList } from "@/components/messaging/conversation-list";
+  import { ChatInterface } from "@/components/messaging/chat-interface";
+  import { Card } from "@/components/ui/card";
+  import { MessageSquare } from "lucide-react";
+  import type { RealtimeChannel } from "@supabase/supabase-js";
+
+export const dynamic = 'force-dynamic';
 
 interface Message {
   id: string;
@@ -47,8 +49,7 @@ export default function MessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
    const router = useRouter();
-   const searchParams = useSearchParams();
-   const supabase = createClient();
+    const supabase = createClient();
 
    useEffect(() => {
      loadConversations();
@@ -87,30 +88,43 @@ export default function MessagesPage() {
      return () => {
        channel.unsubscribe();
      };
-   }, [selectedConversationId]);
+    }, [selectedConversationId]);
 
-   // Handle URL and localStorage-based conversation selection
+   // Add a timeout to prevent infinite loading
    useEffect(() => {
-     const conversationIdFromUrl = searchParams.get("conversation");
-     const conversationIdFromStorage = localStorage.getItem("selectedConversationId");
+     const timeout = setTimeout(() => {
+       if (isLoading) {
+         setIsLoading(false);
+         console.error("Loading timed out. Please refresh the page.");
+       }
+     }, 10000); // 10 seconds
 
-     if (conversationIdFromUrl && conversations.length > 0) {
-       const conversationExists = conversations.some(conv => conv.id === conversationIdFromUrl);
-       if (conversationExists) {
-         setSelectedConversationId(conversationIdFromUrl);
-         localStorage.setItem("selectedConversationId", conversationIdFromUrl);
-       }
-     } else if (conversationIdFromStorage && conversations.length > 0) {
-       const conversationExists = conversations.some(conv => conv.id === conversationIdFromStorage);
-       if (conversationExists) {
-         setSelectedConversationId(conversationIdFromStorage);
-         // Update URL to reflect the stored conversation
-         const newUrl = new URL(window.location.href);
-         newUrl.searchParams.set("conversation", conversationIdFromStorage);
-         window.history.replaceState({}, "", newUrl.toString());
-       }
-     }
-   }, [searchParams, conversations]);
+     return () => clearTimeout(timeout);
+   }, [isLoading]);
+
+     // Handle URL and localStorage-based conversation selection
+    useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const conversationIdFromUrl = urlParams.get("conversation");
+      const conversationIdFromStorage = localStorage.getItem("selectedConversationId");
+
+      if (conversationIdFromUrl && conversations.length > 0) {
+        const conversationExists = conversations.some(conv => conv.id === conversationIdFromUrl);
+        if (conversationExists) {
+          setSelectedConversationId(conversationIdFromUrl);
+          localStorage.setItem("selectedConversationId", conversationIdFromUrl);
+        }
+      } else if (conversationIdFromStorage && conversations.length > 0) {
+        const conversationExists = conversations.some(conv => conv.id === conversationIdFromStorage);
+        if (conversationExists) {
+          setSelectedConversationId(conversationIdFromStorage);
+          // Update URL to reflect the stored conversation
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set("conversation", conversationIdFromStorage);
+          window.history.replaceState({}, "", newUrl.toString());
+        }
+      }
+    }, [conversations]);
 
   useEffect(() => {
     if (selectedConversationId) {
@@ -183,14 +197,14 @@ export default function MessagesPage() {
               headline: (p.users as any).headline,
             })) || [];
 
-          // Get last message
-          const { data: lastMessageData } = await supabase
-            .from("messages")
-            .select("content, created_at, sender_id")
-            .eq("conversation_id", conversationId)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
+           // Get last message
+           const { data: lastMessageData } = await supabase
+             .from("messages")
+             .select("content, created_at, sender_id")
+             .eq("conversation_id", conversationId)
+             .order("created_at", { ascending: false })
+             .limit(1)
+             .maybeSingle();
 
           // Get unread count
           const { count: unreadCount } = await supabase
@@ -298,16 +312,16 @@ export default function MessagesPage() {
     if (!selectedConversationId || !currentUserId) return;
 
     try {
-      // Create the message first
-      const { data: newMessage, error: messageError } = await supabase
-        .from("messages")
-        .insert({
-          conversation_id: selectedConversationId,
-          sender_id: currentUserId,
-          content,
-        })
-        .select()
-        .single();
+       // Create the message first
+       const { data: newMessage, error: messageError } = await supabase
+         .from("messages")
+         .insert({
+           conversation_id: selectedConversationId,
+           sender_id: currentUserId,
+           content,
+         })
+         .select()
+         .maybeSingle();
 
       if (messageError) throw messageError;
 

@@ -65,12 +65,12 @@ export default function FreelancerPage({ params }: FreelancerPageProps) {
       }
       setCurrentUserId(user.id)
 
-      // Get freelancer profile
-      const { data: freelancerData, error: freelancerError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", freelancerId)
-        .single()
+       // Get freelancer profile
+       const { data: freelancerData, error: freelancerError } = await supabase
+         .from("users")
+         .select("*")
+         .eq("id", freelancerId)
+         .maybeSingle()
 
       if (freelancerError) throw freelancerError
       setFreelancer(freelancerData)
@@ -93,18 +93,18 @@ export default function FreelancerPage({ params }: FreelancerPageProps) {
        // Get feedback for each job
        const jobsWithFeedback: JobWithFeedback[] = await Promise.all(
          (jobsData || []).map(async (job) => {
-           const { data: feedbackData } = await supabase
-             .from("feedback")
-             .select("id, rating, comment, created_at")
-             .eq("job_id", job.id)
-             .single()
+            const { data: feedbackData } = await supabase
+              .from("feedback")
+              .select("id, rating, comment, created_at")
+              .eq("job_id", job.id)
+              .maybeSingle()
 
-           // Get client info
-           const { data: clientData } = await supabase
-             .from("users")
-             .select("id, full_name, headline, profile_image_url")
-             .eq("id", job.client_id)
-             .single()
+            // Get client info
+            const { data: clientData } = await supabase
+              .from("users")
+              .select("id, full_name, headline, profile_image_url")
+              .eq("id", job.client_id)
+              .maybeSingle()
 
            return {
              id: job.id,
@@ -144,7 +144,7 @@ export default function FreelancerPage({ params }: FreelancerPageProps) {
           completed_at: jobData.completedAt.toISOString(),
         })
         .select()
-        .single()
+         .maybeSingle()
 
       if (error) throw error
 

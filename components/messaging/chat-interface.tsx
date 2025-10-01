@@ -49,8 +49,15 @@ interface Participant {
    const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
    const [editingContent, setEditingContent] = useState("")
    const messagesEndRef = useRef<HTMLDivElement>(null)
-   const fileInputRef = useRef<HTMLInputElement>(null)
-   const supabase = createClient()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const supabase = createClient()
+
+   // Scroll to bottom when messages change
+   useEffect(() => {
+     if (messagesEndRef.current) {
+       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+     }
+   }, [messages])
 
   const getInitials = (name: string) => {
     return name

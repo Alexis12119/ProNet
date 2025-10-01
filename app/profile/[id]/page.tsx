@@ -86,11 +86,11 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       setCurrentUser(user);
 
       const { id } = await params;
-      const { data: profileData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", id)
-        .single();
+       const { data: profileData, error: userError } = await supabase
+         .from("users")
+         .select("*")
+         .eq("id", id)
+         .maybeSingle();
 
       if (userError || !profileData) {
         notFound();
@@ -138,7 +138,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           .or(
             `and(requester_id.eq.${user.id},receiver_id.eq.${id}),and(requester_id.eq.${id},receiver_id.eq.${user.id})`,
           )
-          .single();
+           .maybeSingle();
 
         setConnectionStatus(
           connection
@@ -218,11 +218,11 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       }
 
       // Create new conversation
-      const { data: conversation, error: convError } = await supabase
-        .from("conversations")
-        .insert({})
-        .select()
-        .single();
+       const { data: conversation, error: convError } = await supabase
+         .from("conversations")
+         .insert({})
+         .select()
+         .maybeSingle();
 
       if (convError) throw convError;
 

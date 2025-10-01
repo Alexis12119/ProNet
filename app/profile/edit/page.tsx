@@ -15,6 +15,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AddSkillDialog } from "@/components/profile/add-skill-dialog";
 import { resizeImage } from "@/lib/image-utils";
+import { loadProfileFromServer, saveProfileToServer } from "./actions";
 
 interface UserProfile {
   id: string;
@@ -40,12 +41,22 @@ export default function EditProfilePage() {
   const supabase = createClient();
 
    useEffect(() => {
-     loadProfile();
-   }, []);
+      loadProfile();
+    }, []);
 
+   // Add a timeout to prevent infinite loading
+   useEffect(() => {
+     const timeout = setTimeout(() => {
+       if (isLoading) {
+         setIsLoading(false);
+         setError("Loading timed out. Please refresh the page.");
+       }
+     }, 10000); // 10 seconds
 
+     return () => clearTimeout(timeout);
+   }, [isLoading]);
 
-   const loadProfile = async () => {
+    const loadProfile = async () => {
     try {
       const {
         data: { user },
@@ -55,15 +66,27 @@ export default function EditProfilePage() {
         return;
       }
 
-      // Get user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+       // Get user profile from server action
+       console.log("Fetching profile from server action...");
+       const profileData = await loadProfileFromServer(user.id);
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
+       if (profileData) {
+         console.log("Profile loaded from database:", profileData);
+         setProfile(profileData);
+       } else {
+         console.log("No profile in database, using JWT metadata as fallback");
+         // Use JWT metadata as fallback (tamper-proof)
+         const fallbackProfile = {
+           id: user.id,
+           full_name: user.user_metadata?.full_name || "New User",
+           headline: user.user_metadata?.headline || "",
+           bio: user.user_metadata?.bio || "",
+           location: "",
+           profile_image_url: "",
+         };
+         console.log("Fallback profile:", fallbackProfile);
+         setProfile(fallbackProfile);
+       }
 
 
     } catch (error) {
@@ -139,34 +162,24 @@ export default function EditProfilePage() {
     }
   };
 
-  const saveProfile = async () => {
-    if (!profile) return;
+   const saveProfile = async () => {
+     if (!profile) return;
 
-    setIsSaving(true);
-    setError(null);
+     setIsSaving(true);
+     setError(null);
 
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          full_name: profile.full_name,
-          headline: profile.headline,
-          bio: profile.bio,
-          location: profile.location,
-        })
-        .eq("id", profile.id);
-
-      if (error) throw error;
-      toast.success("Profile updated successfully!");
-      router.push(`/profile/${profile.id}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      console.error("Error saving profile:", message);
-      toast.error(`Failed to save profile: ${message}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+     try {
+       await saveProfileToServer(profile);
+       toast.success("Profile saved successfully!");
+       router.push(`/profile/${profile.id}`);
+     } catch (error) {
+       const message = error instanceof Error ? error.message : "Unknown error";
+       console.error("Error saving profile:", message);
+       toast.error(`Failed to save profile: ${message}`);
+     } finally {
+       setIsSaving(false);
+     }
+   };
 
   if (isLoading) {
     return (

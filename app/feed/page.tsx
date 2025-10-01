@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { CreatePost } from "@/components/feed/create-post"
-import { PostCard } from "@/components/feed/post-card"
-import { toast } from "sonner"
-import type { RealtimeChannel } from "@supabase/supabase-js"
+ import { CreatePost } from "@/components/feed/create-post"
+ import { PostCard } from "@/components/feed/post-card"
+ import { Button } from "@/components/ui/button"
+ import { toast } from "sonner"
+ import { ChevronUp } from "lucide-react"
+ import type { RealtimeChannel } from "@supabase/supabase-js"
 
 interface Post {
   id: string
@@ -106,8 +108,8 @@ function FeedContent() {
         return
       }
 
-      // Get user profile
-      const { data: profile } = await supabase.from("users").select("*").eq("id", authUser.id).single()
+       // Get user profile
+       const { data: profile } = await supabase.from("users").select("*").eq("id", authUser.id).maybeSingle()
 
       if (profile) {
         setUser(profile)
@@ -325,35 +327,44 @@ function FeedContent() {
     )
   }
 
-  return (
-    <div className="bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Create Post */}
-          {user && <CreatePost user={user} onPost={handleCreatePost} />}
+   return (
+     <div className="bg-gray-50 relative">
+       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         <div className="space-y-6">
+           {/* Create Post */}
+           {user && <CreatePost user={user} onPost={handleCreatePost} />}
 
-          {/* Posts Feed */}
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={handleLike}
-                onShare={handleShare}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-                currentUserId={user?.id}
-              />
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No posts yet. Create your first post above!</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+           {/* Posts Feed */}
+           {posts.length > 0 ? (
+             posts.map((post) => (
+               <PostCard
+                 key={post.id}
+                 post={post}
+                 onLike={handleLike}
+                 onShare={handleShare}
+                 onDelete={handleDelete}
+                 onUpdate={handleUpdate}
+                 currentUserId={user?.id}
+               />
+             ))
+           ) : (
+             <div className="text-center py-12">
+               <p className="text-gray-500">No posts yet. Create your first post above!</p>
+             </div>
+           )}
+         </div>
+       </div>
+
+       {/* Scroll to Top Button */}
+       <Button
+         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+         className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50"
+         size="sm"
+       >
+         <ChevronUp className="h-6 w-6" />
+       </Button>
+     </div>
+   )
 }
 
 export default function FeedPage() {

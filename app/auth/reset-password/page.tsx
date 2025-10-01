@@ -17,38 +17,79 @@ function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) return "Password must be at least 8 characters"
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter"
+    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter"
+    if (!/\d/.test(password)) return "Password must contain at least one number"
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character"
+    return null
+  }
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  useEffect(() => {
-    // Handle the auth callback from email
-    const handleAuthCallback = async () => {
-      const supabase = createClient()
-      const { error } = await supabase.auth.getSession()
-      if (error) {
-        setError("Invalid or expired reset link")
-      }
-    }
+   useEffect(() => {
+     // Handle the auth callback from email
+     const handleAuthCallback = async () => {
+       const supabase = createClient()
 
-    handleAuthCallback()
-  }, [])
+       // Check if there are tokens in the URL hash
+       const hash = window.location.hash.substring(1)
+       const params = new URLSearchParams(hash)
+       const accessToken = params.get('access_token')
+       const refreshToken = params.get('refresh_token')
+
+       if (accessToken && refreshToken) {
+         const { error } = await supabase.auth.setSession({
+           access_token: accessToken,
+           refresh_token: refreshToken,
+         })
+         if (error) {
+           setError("Invalid or expired reset link")
+         }
+         // Clean the URL
+         window.history.replaceState({}, document.title, window.location.pathname)
+       }
+
+       const { data, error } = await supabase.auth.getSession()
+       if (error || !data.session) {
+         setError("Invalid or expired reset link")
+       }
+     }
+
+     handleAuthCallback()
+   }, [])
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
+    if (password.trim() === "") {
+      setPasswordError("This field is required")
+      setIsLoading(false)
+      return
+    }
+    const passwordValidationError = validatePassword(password)
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError)
       setIsLoading(false)
       return
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (confirmPassword.trim() === "") {
+      setConfirmPasswordError("This field is required")
+      setIsLoading(false)
+      return
+    }
+    if (password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match")
       setIsLoading(false)
       return
     }
@@ -105,14 +146,27 @@ function ResetPasswordForm() {
                 <div className="grid gap-2">
                   <Label htmlFor="password">New Password</Label>
                   <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pr-10"
-                    />
+                     <Input
+                       id="password"
+                       type={showPassword ? "text" : "password"}
+                       autoComplete="new-password"
+                       required
+                       value={password}
+                       onChange={(e) => {
+                         setPassword(e.target.value)
+                         if (e.target.value.length > 0) {
+                           if (e.target.value.trim() === "") {
+                             setPasswordError("This field is required")
+                           } else {
+                             setPasswordError(validatePassword(e.target.value))
+                           }
+                         } else {
+                           setPasswordError(null)
+                         }
+                       }}
+                       className={`pr-10 ${passwordError ? "border-red-500" : ""}`}
+                     />
+                     {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
                     <Button
                       type="button"
                       variant="ghost"
@@ -131,14 +185,29 @@ function ResetPasswordForm() {
                 <div className="grid gap-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pr-10"
-                    />
+                     <Input
+                       id="confirmPassword"
+                       type={showConfirmPassword ? "text" : "password"}
+                       autoComplete="new-password"
+                       required
+                       value={confirmPassword}
+                       onChange={(e) => {
+                         setConfirmPassword(e.target.value)
+                         if (e.target.value.length > 0) {
+                           if (e.target.value.trim() === "") {
+                             setConfirmPasswordError("This field is required")
+                           } else if (password !== e.target.value) {
+                             setConfirmPasswordError("Passwords do not match")
+                           } else {
+                             setConfirmPasswordError(null)
+                           }
+                         } else {
+                           setConfirmPasswordError(null)
+                         }
+                       }}
+                       className={`pr-10 ${confirmPasswordError ? "border-red-500" : ""}`}
+                     />
+                     {confirmPasswordError && <p className="text-sm text-red-500">{confirmPasswordError}</p>}
                     <Button
                       type="button"
                       variant="ghost"

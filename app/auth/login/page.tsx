@@ -10,21 +10,65 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Briefcase, Eye, EyeOff } from "lucide-react"
+import { Briefcase, Eye, EyeOff, AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) return "Password must be at least 8 characters"
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter"
+    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter"
+    if (!/\d/.test(password)) return "Password must contain at least one number"
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character"
+    return null
+  }
   const router = useRouter()
+
+  const validateEmail = (email: string) => {
+    return email.includes("@") && email.includes(".")
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
+
+    // Validate fields
+    if (email.trim() === "") {
+      setEmailError("This field is required")
+      setEmailTouched(true)
+      setIsLoading(false)
+      return
+    }
+    if (!validateEmail(email)) {
+      setEmailError("Please enter a valid email address")
+      setEmailTouched(true)
+      setIsLoading(false)
+      return
+    }
+    if (password.trim() === "") {
+      setPasswordError("This field is required")
+      setPasswordTouched(true)
+      setIsLoading(false)
+      return
+    }
+    const passwordValidationError = validatePassword(password)
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError)
+      setPasswordTouched(true)
+      setIsLoading(false)
+      return
+    }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -63,38 +107,70 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-10 sm:h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-10 sm:h-11 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+               <div className="space-y-2">
+                 <Label htmlFor="email">Email</Label>
+                 <div className="relative">
+                   <Input
+                     id="email"
+                     type="email"
+                     placeholder="john@example.com"
+                     required
+                     value={email}
+                     onChange={(e) => {
+                       setEmail(e.target.value)
+                       if (emailTouched) {
+                         if (e.target.value.trim() === "") {
+                           setEmailError("This field is required")
+                         } else if (!validateEmail(e.target.value)) {
+                           setEmailError("Please enter a valid email address")
+                         } else {
+                           setEmailError(null)
+                         }
+                       }
+                     }}
+                     onBlur={() => setEmailTouched(true)}
+                     className={`h-10 sm:h-11 ${emailError ? "border-red-500 pr-10" : ""}`}
+                   />
+                   {emailError && (
+                     <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                   )}
+                 </div>
+                 {emailError && <p className="text-sm text-red-500">{emailError}</p>}
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="password">Password</Label>
+                 <div className="relative">
+                   <Input
+                     id="password"
+                     type={showPassword ? "text" : "password"}
+                     required
+                     value={password}
+                     onChange={(e) => {
+                       setPassword(e.target.value)
+                       if (passwordTouched) {
+                         if (e.target.value.trim() === "") {
+                           setPasswordError("This field is required")
+                         } else {
+                           setPasswordError(validatePassword(e.target.value))
+                         }
+                       }
+                     }}
+                     onBlur={() => setPasswordTouched(true)}
+                     className={`h-10 sm:h-11 ${passwordError ? "border-red-500" : ""} pr-20`}
+                   />
+                   <button
+                     type="button"
+                     onClick={() => setShowPassword(!showPassword)}
+                     className="absolute right-10 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                   >
+                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                   </button>
+                   {passwordError && (
+                     <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                   )}
+                 </div>
+                 {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+               </div>
               {error && (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
                   {error}

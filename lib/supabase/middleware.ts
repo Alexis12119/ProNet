@@ -31,23 +31,29 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  // IMPORTANT: If you remove getUser() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+   // IMPORTANT: If you remove getUser() and you use server-side rendering
+   // with the Supabase client, your users may be randomly logged out.
+   let user = null;
+   try {
+     const { data } = await supabase.auth.getUser();
+     user = data?.user;
+   } catch (error) {
+     console.error("Auth error in middleware:", error);
+     // Return the response without redirect if auth fails
+     return supabaseResponse;
+   }
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    return NextResponse.redirect(url)
-  }
+   if (
+     request.nextUrl.pathname !== "/" &&
+     !user &&
+     !request.nextUrl.pathname.startsWith("/login") &&
+     !request.nextUrl.pathname.startsWith("/auth")
+   ) {
+     // no user, potentially respond by redirecting the user to the login page
+     const url = request.nextUrl.clone()
+     url.pathname = "/auth/login"
+     return NextResponse.redirect(url)
+   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

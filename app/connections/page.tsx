@@ -81,7 +81,7 @@ export default function ConnectionsPage() {
           const otherUserId = conn.requester_id === user.id ? conn.receiver_id : conn.requester_id
           const isRequester = conn.requester_id === user.id
 
-          const { data: userData } = await supabase.from("users").select("*").eq("id", otherUserId).single()
+           const { data: userData } = await supabase.from("users").select("*").eq("id", otherUserId).maybeSingle()
 
           return {
             id: conn.id,

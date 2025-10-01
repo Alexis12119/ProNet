@@ -50,8 +50,8 @@ interface ProjectsSectionProps {
 }
 
 export function ProjectsSection({ projects, isOwnProfile, userId, onProjectUpdate, onProjectDelete }: ProjectsSectionProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const supabase = createClient()
+   const [showAddDialog, setShowAddDialog] = useState(false)
+   const supabase = createClient()
 
   const handleDeleteProject = async (projectId: string) => {
     try {
@@ -130,81 +130,81 @@ export function ProjectsSection({ projects, isOwnProfile, userId, onProjectUpdat
           />
         )}
       </CardHeader>
-      <CardContent>
-        {projects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projects.map((project) => (
-              <div key={project.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
-                {project.image_url && (
-                  <div className="aspect-video bg-gray-100 rounded-md mb-4 overflow-hidden">
-                    <img
-                      src={project.image_url || "/placeholder.svg"}
-                      alt={project.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900 text-lg leading-tight">{project.title}</h3>
-                  <div className="flex items-center space-x-2 ml-2">
-                    {project.link && (
-                      <Badge variant="secondary" className="text-xs flex items-center space-x-1">
-                        {getProjectIcon(project.link)}
-                        <span>{getPlatformName(project.link)}</span>
-                      </Badge>
-                    )}
-                    {isOwnProfile && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <EditProjectDialog
-                            project={project}
-                            onProjectUpdated={onProjectUpdate}
-                            trigger={
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                            }
-                          />
-                          <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </div>
-                {project.description && (
-                  <div className="min-h-[3rem] max-h-[4rem] overflow-hidden mb-4">
-                    <p className="text-sm text-gray-600 leading-relaxed break-words">{project.description}</p>
-                  </div>
-                )}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <Badge variant="outline" className="text-xs">
-                    {formatDate(project.created_at)}
-                  </Badge>
-                  {project.link && (
-                    <Link
-                      href={project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
-                    >
-                      <span>View Project</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
+       <CardContent>
+         {projects.length > 0 ? (
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {projects.map((project) => (
+               <div key={project.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
+                 {project.image_url && (
+                   <div className="aspect-video bg-gray-100 rounded-md mb-4 overflow-hidden">
+                     <img
+                       src={project.image_url || "/placeholder.svg"}
+                       alt={project.title}
+                       className="w-full h-full object-cover"
+                     />
+                   </div>
+                 )}
+                 <div className="flex items-start justify-between mb-3">
+                   <h3 className="font-semibold text-gray-900 text-lg leading-tight">{project.title}</h3>
+                   <div className="flex items-center space-x-2 ml-2">
+                     {project.link && (
+                       <Badge variant="secondary" className="text-xs flex items-center space-x-1">
+                         {getProjectIcon(project.link)}
+                         <span>{getPlatformName(project.link)}</span>
+                       </Badge>
+                     )}
+                     {isOwnProfile && (
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                             <Edit className="h-3 w-3" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           <EditProjectDialog
+                             project={project}
+                             onProjectUpdated={onProjectUpdate}
+                             trigger={
+                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                 <Edit className="h-4 w-4 mr-2" />
+                                 Edit
+                               </DropdownMenuItem>
+                             }
+                           />
+                           <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-red-600">
+                             <Trash2 className="h-4 w-4 mr-2" />
+                             Delete
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
+                     )}
+                   </div>
+                 </div>
+                 {project.description && (
+                   <div className="min-h-[3rem] max-h-[4rem] overflow-hidden mb-4">
+                     <p className="text-sm text-gray-600 leading-relaxed break-words">{project.description}</p>
+                   </div>
+                 )}
+                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                   <Badge variant="outline" className="text-xs">
+                     {formatDate(project.created_at)}
+                   </Badge>
+                   {project.link && (
+                     <Link
+                       href={project.link}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                     >
+                       <span>View Project</span>
+                       <ExternalLink className="h-3 w-3" />
+                     </Link>
+                   )}
+                 </div>
+               </div>
+             ))}
+           </div>
+         ) : (
           <div className="text-center py-8 text-gray-500">
             <p>No projects added yet</p>
             {isOwnProfile && (
@@ -218,8 +218,8 @@ export function ProjectsSection({ projects, isOwnProfile, userId, onProjectUpdat
               />
             )}
           </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+         )}
+       </CardContent>
+     </Card>
+   )
+ }
