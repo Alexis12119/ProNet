@@ -227,17 +227,17 @@ export default function ProjectsPage() {
                      className="flex items-center space-x-2 hover:text-blue-600"
                    >
                      <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
-                       {project.user.profile_image_url ? (
-                        <img
-                          src={project.user.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"}
-                          alt={project.user.full_name}
-                          className="w-full h-full object-cover"
-                        />
-                       ) : (
-                         <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
-                           {project.user.full_name.charAt(0)}
-                         </div>
-                       )}
+                        {project.user.profile_image_url ? (
+                         <img
+                           src={project.user.profile_image_url}
+                           alt={project.user.full_name}
+                           className="w-full h-full object-cover"
+                         />
+                        ) : (
+                          <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                            {project.user.full_name.charAt(0)}
+                          </div>
+                        )}
                      </div>
                      <span className="text-sm font-medium">{project.user.full_name}</span>
                    </Link>

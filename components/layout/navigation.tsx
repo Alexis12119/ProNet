@@ -302,13 +302,10 @@ interface SearchUser {
                   className="relative h-8 w-8 rounded-full"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={
-                        user.profile_image_url ||
-                        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                      }
-                      alt={user.full_name}
-                    />
+                     <AvatarImage
+                       src={user.profile_image_url}
+                       alt={user.full_name}
+                     />
                     <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
                       {getInitials(user.full_name)}
                     </AvatarFallback>

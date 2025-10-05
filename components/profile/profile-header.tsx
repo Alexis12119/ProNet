@@ -73,10 +73,10 @@ export function ProfileHeader({
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-4">
               <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                <AvatarImage
-                  src={user.profile_image_url || "/placeholder.svg"}
-                  alt={user.full_name}
-                />
+                 <AvatarImage
+                   src={user.profile_image_url}
+                   alt={user.full_name}
+                 />
                 <AvatarFallback className="text-2xl font-semibold bg-blue-100 text-blue-700">
                   {getInitials(user.full_name)}
                 </AvatarFallback>
