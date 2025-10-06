@@ -9,21 +9,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useState } from "react"
-import { ArrowLeft, Mail } from "lucide-react"
+import { ArrowLeft, Mail, AlertCircle } from "lucide-react"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailTouched, setEmailTouched] = useState(false)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const validateEmail = (email: string) => {
-    if (!email) return "Email is required"
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) return "Please enter a valid email address"
-    return null
-  }
+   const validateEmail = (email: string) => {
+     if (!email.trim()) return "Please enter your email address"
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+     if (!emailRegex.test(email)) return "Please enter a valid email address"
+     return null
+   }
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,12 +33,13 @@ export default function ForgotPasswordPage() {
     setError(null)
     setEmailError(null)
 
-    const validationError = validateEmail(email)
-    if (validationError) {
-      setEmailError(validationError)
-      setIsLoading(false)
-      return
-    }
+     const validationError = validateEmail(email)
+     if (validationError) {
+       setEmailError(validationError)
+       setEmailTouched(true)
+       setIsLoading(false)
+       return
+     }
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -100,14 +102,26 @@ export default function ForgotPasswordPage() {
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                   <div className="relative">
+                     <Input
+                       id="email"
+                       type="email"
+                       placeholder="m@example.com"
+                       required
+                       value={email}
+                       onChange={(e) => {
+                         setEmail(e.target.value)
+                         if (!emailTouched) setEmailTouched(true)
+                         const validationError = validateEmail(e.target.value)
+                         setEmailError(validationError)
+                       }}
+                       onBlur={() => setEmailTouched(true)}
+                       className={`h-10 sm:h-11 ${emailError ? "border-red-500 pr-10" : ""}`}
+                     />
+                     {emailError && (
+                       <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                     )}
+                   </div>
                 </div>
                 {emailError && <p className="text-sm text-red-500">{emailError}</p>}
                 {error && <p className="text-sm text-red-500">{error}</p>}

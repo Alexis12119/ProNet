@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, Suspense } from "react"
-import { Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react"
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("")
@@ -19,18 +19,21 @@ function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
+  const [passwordTouched, setPasswordTouched] = useState(false)
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) return "Password must be at least 8 characters"
-    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter"
-    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter"
-    if (!/\d/.test(password)) return "Password must contain at least one number"
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character"
-    return null
-  }
+   const validatePassword = (password: string): string | null => {
+     if (!password.trim()) return "Please enter a password"
+     if (password.length < 8) return "Password must be at least 8 characters"
+     if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter"
+     if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter"
+     if (!/\d/.test(password)) return "Password must contain at least one number"
+     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character"
+     return null
+   }
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -71,28 +74,32 @@ function ResetPasswordForm() {
     setIsLoading(true)
     setError(null)
 
-    if (password.trim() === "") {
-      setPasswordError("This field is required")
-      setIsLoading(false)
-      return
-    }
-    const passwordValidationError = validatePassword(password)
-    if (passwordValidationError) {
-      setPasswordError(passwordValidationError)
-      setIsLoading(false)
-      return
-    }
+     if (password.trim() === "") {
+       setPasswordError("Please enter a password")
+       setPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     const passwordValidationError = validatePassword(password)
+     if (passwordValidationError) {
+       setPasswordError(passwordValidationError)
+       setPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
 
-    if (confirmPassword.trim() === "") {
-      setConfirmPasswordError("This field is required")
-      setIsLoading(false)
-      return
-    }
-    if (password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
+     if (confirmPassword.trim() === "") {
+       setConfirmPasswordError("Please confirm your password")
+       setConfirmPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (password !== confirmPassword) {
+       setConfirmPasswordError("Passwords do not match")
+       setConfirmPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
 
     try {
       const supabase = createClient()
@@ -146,27 +153,43 @@ function ResetPasswordForm() {
                 <div className="grid gap-2">
                   <Label htmlFor="password">New Password</Label>
                   <div className="relative">
-                     <Input
-                       id="password"
-                       type={showPassword ? "text" : "password"}
-                       autoComplete="new-password"
-                       required
-                       value={password}
-                       onChange={(e) => {
-                         setPassword(e.target.value)
-                         if (e.target.value.length > 0) {
-                           if (e.target.value.trim() === "") {
-                             setPasswordError("This field is required")
-                           } else {
-                             setPasswordError(validatePassword(e.target.value))
-                           }
-                         } else {
-                           setPasswordError(null)
-                         }
-                       }}
-                       className={`pr-10 ${passwordError ? "border-red-500" : ""}`}
-                     />
-                     {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          required
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            if (!passwordTouched) setPasswordTouched(true)
+                            setPasswordError(validatePassword(e.target.value))
+                            // Re-validate confirm password when password changes
+                            if (confirmPasswordTouched) {
+                              if (confirmPassword.trim() === "") {
+                                setConfirmPasswordError("Please confirm your password")
+                              } else if (e.target.value !== confirmPassword) {
+                                setConfirmPasswordError("Passwords do not match")
+                              } else {
+                                setConfirmPasswordError(null)
+                              }
+                            }
+                          }}
+                          onBlur={() => setPasswordTouched(true)}
+                          className={`h-10 sm:h-11 pr-20 ${passwordError ? "border-red-500" : ""}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-10 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        {passwordError && (
+                          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
                     <Button
                       type="button"
                       variant="ghost"
@@ -185,29 +208,39 @@ function ResetPasswordForm() {
                 <div className="grid gap-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
-                     <Input
-                       id="confirmPassword"
-                       type={showConfirmPassword ? "text" : "password"}
-                       autoComplete="new-password"
-                       required
-                       value={confirmPassword}
-                       onChange={(e) => {
-                         setConfirmPassword(e.target.value)
-                         if (e.target.value.length > 0) {
-                           if (e.target.value.trim() === "") {
-                             setConfirmPasswordError("This field is required")
-                           } else if (password !== e.target.value) {
-                             setConfirmPasswordError("Passwords do not match")
-                           } else {
-                             setConfirmPasswordError(null)
-                           }
-                         } else {
-                           setConfirmPasswordError(null)
-                         }
-                       }}
-                       className={`pr-10 ${confirmPasswordError ? "border-red-500" : ""}`}
-                     />
-                     {confirmPasswordError && <p className="text-sm text-red-500">{confirmPasswordError}</p>}
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value)
+                            if (!confirmPasswordTouched) setConfirmPasswordTouched(true)
+                            if (e.target.value.trim() === "") {
+                              setConfirmPasswordError("Please confirm your password")
+                            } else if (password !== e.target.value) {
+                              setConfirmPasswordError("Passwords do not match")
+                            } else {
+                              setConfirmPasswordError(null)
+                            }
+                          }}
+                          onBlur={() => setConfirmPasswordTouched(true)}
+                          className={`h-10 sm:h-11 pr-20 ${confirmPasswordError ? "border-red-500" : ""}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-10 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        {confirmPasswordError && (
+                          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      {confirmPasswordError && <p className="text-sm text-red-500">{confirmPasswordError}</p>}
                     <Button
                       type="button"
                       variant="ghost"

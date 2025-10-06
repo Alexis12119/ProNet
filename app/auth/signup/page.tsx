@@ -45,51 +45,66 @@ export default function SignUpPage() {
   }
   const router = useRouter()
 
-  const validateEmail = (email: string) => {
-    return email.includes("@") && email.includes(".")
-  }
+   const validateEmail = (email: string) => {
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+     return emailRegex.test(email)
+   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+     const { name, value } = e.target
+     setFormData((prev) => ({
+       ...prev,
+       [name]: value,
+     }))
 
-    // Live validation
-    if (name === "email" && emailTouched) {
-      if (value.trim() === "") {
-        setEmailError("This field is required")
-      } else if (!validateEmail(value)) {
-        setEmailError("Please enter a valid email address")
-      } else {
-        setEmailError(null)
-      }
-    }
-    if (name === "password" && passwordTouched) {
-      if (value.trim() === "") {
-        setPasswordError("This field is required")
-      } else {
-        setPasswordError(validatePassword(value))
-      }
-    }
-    if (name === "confirmPassword" && confirmPasswordTouched) {
-      if (value.trim() === "") {
-        setConfirmPasswordError("This field is required")
-      } else if (value !== formData.password) {
-        setConfirmPasswordError("Passwords do not match")
-      } else {
-        setConfirmPasswordError(null)
-      }
-    }
-    if (name === "fullName" && fullNameTouched) {
-      if (value.trim() === "") {
-        setFullNameError("This field is required")
-      } else {
-        setFullNameError(null)
-      }
-    }
-  }
+     // Live validation
+     if (name === "email") {
+       if (value.trim() === "") {
+         setEmailError("Please enter your email address")
+       } else if (!validateEmail(value)) {
+         setEmailError("Please enter a valid email address")
+       } else {
+         setEmailError(null)
+       }
+       setEmailTouched(true)
+     }
+     if (name === "password") {
+       if (value.trim() === "") {
+         setPasswordError("Please enter a password")
+       } else {
+         setPasswordError(validatePassword(value))
+       }
+       setPasswordTouched(true)
+       // Re-validate confirm password when password changes
+       if (confirmPasswordTouched) {
+         if (formData.confirmPassword.trim() === "") {
+           setConfirmPasswordError("Please confirm your password")
+         } else if (value !== formData.confirmPassword) {
+           setConfirmPasswordError("Passwords do not match")
+         } else {
+           setConfirmPasswordError(null)
+         }
+       }
+     }
+     if (name === "confirmPassword") {
+       if (value.trim() === "") {
+         setConfirmPasswordError("Please confirm your password")
+       } else if (value !== formData.password) {
+         setConfirmPasswordError("Passwords do not match")
+       } else {
+         setConfirmPasswordError(null)
+       }
+       setConfirmPasswordTouched(true)
+     }
+     if (name === "fullName") {
+       if (value.trim() === "") {
+         setFullNameError("Please enter your full name")
+       } else {
+         setFullNameError(null)
+       }
+       setFullNameTouched(true)
+     }
+   }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,50 +112,50 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
-    // Validate fields
-    if (formData.email.trim() === "") {
-      setEmailError("This field is required")
-      setEmailTouched(true)
-      setIsLoading(false)
-      return
-    }
-    if (!validateEmail(formData.email)) {
-      setEmailError("Please enter a valid email address")
-      setEmailTouched(true)
-      setIsLoading(false)
-      return
-    }
-    if (formData.password.trim() === "") {
-      setPasswordError("This field is required")
-      setPasswordTouched(true)
-      setIsLoading(false)
-      return
-    }
-    const passwordValidationError = validatePassword(formData.password)
-    if (passwordValidationError) {
-      setPasswordError(passwordValidationError)
-      setPasswordTouched(true)
-      setIsLoading(false)
-      return
-    }
-    if (formData.confirmPassword.trim() === "") {
-      setConfirmPasswordError("This field is required")
-      setConfirmPasswordTouched(true)
-      setIsLoading(false)
-      return
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setConfirmPasswordError("Passwords do not match")
-      setConfirmPasswordTouched(true)
-      setIsLoading(false)
-      return
-    }
-    if (formData.fullName.trim() === "") {
-      setFullNameError("This field is required")
-      setFullNameTouched(true)
-      setIsLoading(false)
-      return
-    }
+     // Validate fields
+     if (formData.email.trim() === "") {
+       setEmailError("Please enter your email address")
+       setEmailTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (!validateEmail(formData.email)) {
+       setEmailError("Please enter a valid email address")
+       setEmailTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (formData.password.trim() === "") {
+       setPasswordError("Please enter a password")
+       setPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     const passwordValidationError = validatePassword(formData.password)
+     if (passwordValidationError) {
+       setPasswordError(passwordValidationError)
+       setPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (formData.confirmPassword.trim() === "") {
+       setConfirmPasswordError("Please confirm your password")
+       setConfirmPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (formData.password !== formData.confirmPassword) {
+       setConfirmPasswordError("Passwords do not match")
+       setConfirmPasswordTouched(true)
+       setIsLoading(false)
+       return
+     }
+     if (formData.fullName.trim() === "") {
+       setFullNameError("Please enter your full name")
+       setFullNameTouched(true)
+       setIsLoading(false)
+       return
+     }
 
     try {
       const { error } = await supabase.auth.signUp({
