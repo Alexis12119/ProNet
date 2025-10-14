@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { EditPostDialog } from "./edit-post-dialog"
 import { CommentDialog } from "./comment-dialog"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 interface Post {
   id: string
@@ -43,6 +44,7 @@ interface PostCardProps {
 export function PostCard({ post, onLike, onShare, onDelete, onUpdate, currentUserId }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.is_liked)
   const [likesCount, setLikesCount] = useState(post.likes_count)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const getInitials = (name: string) => {
     return name
@@ -111,10 +113,10 @@ export function PostCard({ post, onLike, onShare, onDelete, onUpdate, currentUse
                     </DropdownMenuItem>
                   }
                 />
-                <DropdownMenuItem onClick={() => onDelete?.(post.id)} className="text-red-600">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Post
-                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-red-600">
+                   <Trash2 className="h-4 w-4 mr-2" />
+                   Delete Post
+                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -176,6 +178,15 @@ export function PostCard({ post, onLike, onShare, onDelete, onUpdate, currentUse
            </Button>
         </div>
       </CardContent>
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Post"
+        description="Are you sure you want to delete this post? This action cannot be undone and will permanently remove the post and all its content."
+        confirmText="Delete"
+        onConfirm={() => onDelete?.(post.id)}
+        variant="destructive"
+      />
     </Card>
   )
 }

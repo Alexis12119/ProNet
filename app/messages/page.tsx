@@ -12,12 +12,13 @@
 export const dynamic = 'force-dynamic';
 
 interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  read_at?: string;
-}
+   id: string;
+   content: string;
+   sender_id: string;
+   created_at: string;
+   read_at?: string;
+   attachments?: any[];
+ }
 
 interface Participant {
   id: string;
@@ -242,62 +243,87 @@ export default function MessagesPage() {
     }
   };
 
-  const loadMessages = async (conversationId: string) => {
-    setIsLoadingMessages(true);
-    try {
-      // Get messages
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+   const loadMessages = async (conversationId: string) => {
+     setIsLoadingMessages(true);
+     try {
+       // Get messages
+       const { data: messagesData, error: messagesError } = await supabase
+         .from("messages")
+         .select("*")
+         .eq("conversation_id", conversationId)
+         .order("created_at", { ascending: true });
 
-      if (messagesError) throw messagesError;
-      setMessages(messagesData || []);
+       if (messagesError) throw messagesError;
 
-      // Get participants
-      const { data: participantsData, error: participantsError } =
-        await supabase
-          .from("conversation_participants")
-          .select(
-            `
-          users (
-            id,
-            full_name,
-            profile_image_url,
-            headline
-          )
-        `,
-          )
-          .eq("conversation_id", conversationId);
+       // Get attachments for these messages
+       const messageIds = messagesData?.map(m => m.id) || [];
+       const { data: attachmentsData, error: attachmentsError } = await supabase
+         .from("message_attachments")
+         .select("*")
+         .in("message_id", messageIds);
 
-      if (participantsError) throw participantsError;
+       if (attachmentsError) throw attachmentsError;
 
-      const participantsList: Participant[] =
-        participantsData?.map((p) => ({
-          id: (p.users as any).id,
-          full_name: (p.users as any).full_name,
-          profile_image_url: (p.users as any).profile_image_url,
-          headline: (p.users as any).headline,
-        })) || [];
+       // Map attachments to messages
+       const attachmentsMap = new Map<string, any[]>();
+       attachmentsData?.forEach(att => {
+         if (!attachmentsMap.has(att.message_id)) {
+           attachmentsMap.set(att.message_id, []);
+         }
+         attachmentsMap.get(att.message_id)!.push(att);
+       });
 
-      setParticipants(participantsList);
+       // Add attachments to messages
+       const messagesWithAttachments = messagesData?.map(msg => ({
+         ...msg,
+         attachments: attachmentsMap.get(msg.id) || [],
+       })) || [];
 
-      // Mark messages as read
-      if (currentUserId) {
-        await supabase
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("conversation_id", conversationId)
-          .neq("sender_id", currentUserId)
-          .is("read_at", null);
-      }
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    } finally {
-      setIsLoadingMessages(false);
-    }
-   };
+       setMessages(messagesWithAttachments);
+
+       // Get participants
+       const { data: participantsData, error: participantsError } =
+         await supabase
+           .from("conversation_participants")
+           .select(
+             `
+           users (
+             id,
+             full_name,
+             profile_image_url,
+             headline
+           )
+         `,
+           )
+           .eq("conversation_id", conversationId);
+
+       if (participantsError) throw participantsError;
+
+       const participantsList: Participant[] =
+         participantsData?.map((p) => ({
+           id: (p.users as any).id,
+           full_name: (p.users as any).full_name,
+           profile_image_url: (p.users as any).profile_image_url,
+           headline: (p.users as any).headline,
+         })) || [];
+
+       setParticipants(participantsList);
+
+       // Mark messages as read
+       if (currentUserId) {
+         await supabase
+           .from("messages")
+           .update({ read_at: new Date().toISOString() })
+           .eq("conversation_id", conversationId)
+           .neq("sender_id", currentUserId)
+           .is("read_at", null);
+       }
+     } catch (error) {
+       console.error("Error loading messages:", error);
+     } finally {
+       setIsLoadingMessages(false);
+     }
+    };
 
     const handleConversationSelect = (conversationId: string) => {
       setSelectedConversationId(conversationId);
@@ -308,63 +334,71 @@ export default function MessagesPage() {
       localStorage.setItem("selectedConversationId", conversationId);
     };
 
-   const handleSendMessage = async (content: string, attachments?: any[]) => {
-    if (!selectedConversationId || !currentUserId) return;
+    const handleSendMessage = async (content: string, attachments?: any[]) => {
+     if (!selectedConversationId || !currentUserId) return;
 
-    try {
-       // Create the message first
-       const { data: newMessage, error: messageError } = await supabase
-         .from("messages")
-         .insert({
-           conversation_id: selectedConversationId,
-           sender_id: currentUserId,
-           content,
-         })
-         .select()
-         .maybeSingle();
+     let uploadedAttachments: any[] = [];
 
-      if (messageError) throw messageError;
+     try {
+        // Create the message first
+        const { data: newMessage, error: messageError } = await supabase
+          .from("messages")
+          .insert({
+            conversation_id: selectedConversationId,
+            sender_id: currentUserId,
+            content,
+          })
+          .select()
+          .maybeSingle();
 
-      // Add attachments if any
-      if (attachments && attachments.length > 0) {
-        const attachmentRecords = attachments.map((att) => ({
-          message_id: newMessage.id,
-          file_url: att.file_url,
-          file_name: att.file_name,
-          file_type: att.file_type,
-          file_size: att.file_size,
-        }));
+       if (messageError) throw messageError;
 
-        const { error: attachmentError } = await supabase
-          .from("message_attachments")
-          .insert(attachmentRecords);
+       // Add attachments if any
+       if (attachments && attachments.length > 0) {
+         const attachmentRecords = attachments.map((att) => ({
+           message_id: newMessage.id,
+           file_url: att.file_url,
+           file_name: att.file_name,
+           file_type: att.file_type,
+           file_size: att.file_size,
+         }));
 
-        if (attachmentError) throw attachmentError;
-      }
+         const { error: attachmentError } = await supabase
+           .from("message_attachments")
+           .insert(attachmentRecords);
 
-      // Add message to local state (attachments can be fetched later or stored separately)
-      setMessages((prev) => [...prev, newMessage]);
+         if (attachmentError) throw attachmentError;
 
-      // Update conversation's last message
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === selectedConversationId
-            ? {
-                ...conv,
-                lastMessage: {
-                  content,
-                  created_at: newMessage.created_at,
-                  sender_id: currentUserId,
-                },
-                updated_at: newMessage.created_at,
-              }
-            : conv,
-        ),
-      );
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  };
+         uploadedAttachments = attachments;
+       }
+
+       // Add message to local state with attachments
+       const messageWithAttachments = {
+         ...newMessage,
+         attachments: uploadedAttachments,
+       };
+       setMessages((prev) => [...prev, messageWithAttachments]);
+
+       // Update conversation's last message
+       setConversations((prev) =>
+         prev.map((conv) =>
+           conv.id === selectedConversationId
+             ? {
+                 ...conv,
+                 lastMessage: {
+                   content,
+                   created_at: newMessage.created_at,
+                   sender_id: currentUserId,
+                 },
+                 updated_at: newMessage.created_at,
+               }
+             : conv,
+         ),
+       );
+     } catch (error) {
+       console.error("Error sending message:", error);
+     }
+   };
 
   if (isLoading) {
     return (

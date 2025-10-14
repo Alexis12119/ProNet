@@ -15,16 +15,17 @@ import {
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-   Home,
-   Users,
-   MessageSquare,
-   Bell,
-   Settings,
-   LogOut,
-   FolderOpen,
-   Network,
-   Search,
- } from "lucide-react";
+  Home,
+  Users,
+  MessageSquare,
+  Bell,
+  Settings,
+  LogOut,
+  FolderOpen,
+  Network,
+  Search,
+} from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 // import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface UserProfile {
@@ -34,76 +35,79 @@ interface UserProfile {
 }
 
 interface SearchUser {
-   id: string;
-   full_name: string;
-   headline?: string;
-   profile_image_url?: string;
- }
+  id: string;
+  full_name: string;
+  headline?: string;
+  profile_image_url?: string;
+}
 
- export function Navigation() {
-   const [user, setUser] = useState<UserProfile | null>(null);
-   const [searchQuery, setSearchQuery] = useState("");
-   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
-   const [isSearching, setIsSearching] = useState(false);
-   const router = useRouter();
-   const pathname = usePathname();
-   const supabase = createClient();
+export function Navigation() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [signOutDialogOpen, setSignOutDialogOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const supabase = createClient();
 
-   useEffect(() => {
-     loadUser();
+  useEffect(() => {
+    loadUser();
 
-     // Listen for auth state changes
-     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-       if (event === 'SIGNED_IN' && session?.user) {
-         const { data: profile } = await supabase
-           .from("users")
-           .select("id, full_name, profile_image_url")
-           .eq("id", session.user.id)
-           .single();
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("id, full_name, profile_image_url")
+          .eq("id", session.user.id)
+          .single();
 
-         setUser(profile);
-       } else if (event === 'SIGNED_OUT') {
-         setUser(null);
-       }
-     });
+        setUser(profile);
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+      }
+    });
 
-     return () => {
-       subscription.unsubscribe();
-     };
-   }, []);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
-   useEffect(() => {
-     if (searchQuery.trim().length > 0) {
-       searchUsers();
-     } else {
-       setSearchResults([]);
-     }
-   }, [searchQuery]);
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      searchUsers();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
 
-   const searchUsers = async () => {
-     setIsSearching(true);
-     try {
-       const { data: users, error } = await supabase
-         .from("users")
-         .select("id, full_name, headline, profile_image_url")
-         .ilike("full_name", `%${searchQuery}%`)
-         .limit(5);
+  const searchUsers = async () => {
+    setIsSearching(true);
+    try {
+      const { data: users, error } = await supabase
+        .from("users")
+        .select("id, full_name, headline, profile_image_url")
+        .ilike("full_name", `%${searchQuery}%`)
+        .limit(5);
 
-       if (error) throw error;
-       setSearchResults(users || []);
-     } catch (error) {
-       console.error("Error searching users:", error);
-       setSearchResults([]);
-     } finally {
-       setIsSearching(false);
-     }
-   };
+      if (error) throw error;
+      setSearchResults(users || []);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-   const handleUserSelect = (userId: string) => {
-     router.push(`/profile/${userId}`);
-     setSearchQuery("");
-     setSearchResults([]);
-   };
+  const handleUserSelect = (userId: string) => {
+    router.push(`/profile/${userId}`);
+    setSearchQuery("");
+    setSearchResults([]);
+  };
 
   const loadUser = async () => {
     const {
@@ -122,6 +126,10 @@ interface SearchUser {
   };
 
   const handleSignOut = async () => {
+    setSignOutDialogOpen(true);
+  };
+
+  const confirmSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
@@ -147,22 +155,29 @@ interface SearchUser {
       <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-             <Link href="/" className="flex items-center space-x-3">
-               <div className="bg-blue-600 p-2 rounded-lg">
-                 <Network className="h-5 w-5 text-white" />
-               </div>
-               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                 ProNet
-               </span>
-             </Link>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Network className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                ProNet
+              </span>
+            </Link>
             <div className="flex items-center space-x-4">
               {/* <ThemeToggle /> */}
-               <Button asChild variant="outline" className="shadow-md border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/40">
-                 <Link href="/auth/login">Sign In</Link>
-               </Button>
-               <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-                 <Link href="/auth/signup">Join Now</Link>
-               </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="shadow-md border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/40"
+              >
+                <Link href="/auth/login">Sign In</Link>
+              </Button>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+              >
+                <Link href="/auth/signup">Join Now</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -170,64 +185,71 @@ interface SearchUser {
     );
   }
 
-   return (
-     <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-         <div className="flex items-center h-16">
+  return (
+    <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-16">
           {/* Logo */}
-           <Link href="/dashboard" className="flex items-center space-x-3">
-             <div className="bg-blue-600 p-2 rounded-lg">
-               <Network className="h-5 w-5 text-white" />
-             </div>
-             <span className="text-xl font-bold text-gray-900 dark:text-white">
-               ProNet
-             </span>
-           </Link>
+          <Link href="/dashboard" className="flex items-center space-x-3">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <Network className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">
+              ProNet
+            </span>
+          </Link>
 
-           {/* Search Bar */}
-           <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
-             <div className="relative w-full">
-               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-               <Input
-                 type="text"
-                 placeholder="Search users..."
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-                 className="pl-10"
-               />
-               {searchResults.length > 0 && (
-                 <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
-                   {searchResults.map((searchUser) => (
-                     <div
-                       key={searchUser.id}
-                       onClick={() => handleUserSelect(searchUser.id)}
-                       className="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                     >
-                       <Avatar className="h-8 w-8">
-                         <AvatarImage src={searchUser.profile_image_url} alt={searchUser.full_name} />
-                         <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                           {searchUser.full_name.split(" ").map(n => n[0]).join("").toUpperCase()}
-                         </AvatarFallback>
-                       </Avatar>
-                       <div className="flex-1">
-                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                           {searchUser.full_name}
-                         </p>
-                         {searchUser.headline && (
-                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                             {searchUser.headline}
-                           </p>
-                         )}
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
-             </div>
-           </div>
+          {/* Search Bar */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+              {searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+                  {searchResults.map((searchUser) => (
+                    <div
+                      key={searchUser.id}
+                      onClick={() => handleUserSelect(searchUser.id)}
+                      className="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={searchUser.profile_image_url}
+                          alt={searchUser.full_name}
+                        />
+                        <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
+                          {searchUser.full_name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {searchUser.full_name}
+                        </p>
+                        {searchUser.headline && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {searchUser.headline}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-           {/* Navigation Links */}
-           <div className="hidden md:flex items-center space-x-8">
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-8">
             <Link
               href="/dashboard"
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -302,10 +324,10 @@ interface SearchUser {
                   className="relative h-8 w-8 rounded-full"
                 >
                   <Avatar className="h-8 w-8">
-                     <AvatarImage
-                       src={user.profile_image_url}
-                       alt={user.full_name}
-                     />
+                    <AvatarImage
+                      src={user.profile_image_url}
+                      alt={user.full_name}
+                    />
                     <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
                       {getInitials(user.full_name)}
                     </AvatarFallback>
@@ -347,6 +369,15 @@ interface SearchUser {
           )}
         </div>
       </div>
+      <ConfirmationDialog
+        open={signOutDialogOpen}
+        onOpenChange={setSignOutDialogOpen}
+        title="Sign Out"
+        description="Are you sure you want to sign out? You will need to log in again to access your account."
+        confirmText="Sign Out"
+        onConfirm={confirmSignOut}
+        variant="destructive"
+      />
     </nav>
   );
 }
