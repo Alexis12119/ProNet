@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth-context"
 import { ConnectionCard } from "@/components/connections/connection-card"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,10 +32,16 @@ export default function ConnectionsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    loadConnections()
-  }, [])
+    if (!authLoading && user) {
+      loadConnections()
+    } else if (!authLoading && !user) {
+      setIsLoading(false)
+      setError("Please log in to view connections")
+    }
+  }, [authLoading, user])
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {

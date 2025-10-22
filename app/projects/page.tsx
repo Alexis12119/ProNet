@@ -21,6 +21,7 @@ import {
   Filter,
 } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 
 interface Project {
   id: string
@@ -44,28 +45,18 @@ export default function ProjectsPage() {
   const [platformFilter, setPlatformFilter] = useState<string>("all")
 
   const supabase = createClient()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    fetchProjects()
-  }, [])
+    if (!authLoading && user) {
+      fetchProjects()
+    } else if (!authLoading && !user) {
+      setLoading(false)
+      setError("Please log in to view projects")
+    }
+  }, [authLoading, user])
 
-  // Add a timeout to prevent infinite loading
-  useEffect(() => {
-    const timeout = setTimeout(async () => {
-      if (loading) {
-        setLoading(false)
-        // Check if session is still valid
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          window.location.href = "/auth/login"
-        } else {
-          setError("Loading timed out. Please refresh the page.")
-        }
-      }
-    }, 10000) // 10 seconds
 
-    return () => clearTimeout(timeout)
-  }, [loading])
 
   const fetchProjects = async () => {
     try {

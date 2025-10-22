@@ -3,6 +3,7 @@
   import { useState, useEffect } from "react";
   import { useRouter } from "next/navigation";
   import { createClient } from "@/lib/supabase/client";
+  import { useAuth } from "@/lib/auth-context";
   import { ConversationList } from "@/components/messaging/conversation-list";
   import { ChatInterface } from "@/components/messaging/chat-interface";
   import { Card } from "@/components/ui/card";
@@ -49,11 +50,16 @@ export default function MessagesPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-   const router = useRouter();
-    const supabase = createClient();
+    const router = useRouter();
+     const supabase = createClient();
+     const { user, loading: authLoading } = useAuth();
 
-   useEffect(() => {
-     loadConversations();
+    useEffect(() => {
+      if (!authLoading && user) {
+        loadConversations();
+      } else if (!authLoading && !user) {
+        setIsLoading(false);
+      }
 
      // Set up real-time subscription for conversations and messages
      const channel = supabase
@@ -86,22 +92,22 @@ export default function MessagesPage() {
        )
        .subscribe();
 
-     return () => {
-       channel.unsubscribe();
-     };
-    }, [selectedConversationId]);
+      return () => {
+        channel.unsubscribe();
+      };
+    }, [selectedConversationId, authLoading, user]);
 
-   // Add a timeout to prevent infinite loading
-   useEffect(() => {
-     const timeout = setTimeout(() => {
-       if (isLoading) {
-         setIsLoading(false);
-         console.error("Loading timed out. Please refresh the page.");
-       }
-     }, 10000); // 10 seconds
+    // Add a timeout to prevent infinite loading
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        if (isLoading) {
+          setIsLoading(false);
+          console.error("Loading timed out. Please refresh the page.");
+        }
+      }, 30000); // 30 seconds
 
-     return () => clearTimeout(timeout);
-   }, [isLoading]);
+      return () => clearTimeout(timeout);
+    }, [isLoading]);
 
      // Handle URL and localStorage-based conversation selection
     useEffect(() => {

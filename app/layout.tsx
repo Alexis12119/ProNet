@@ -4,6 +4,7 @@ import "./globals.css"
 import { Navigation } from "@/components/layout/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { ActivityListener } from "@/components/activity-listener"
+import { AuthProvider } from "@/lib/auth-context"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,10 +33,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="font-sans" suppressHydrationWarning={suppressHydrationWarning}>
-        <ActivityListener />
-        <Navigation />
-        {children}
-        <Toaster />
+        <AuthProvider>
+          <ActivityListener />
+          <Navigation />
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   )

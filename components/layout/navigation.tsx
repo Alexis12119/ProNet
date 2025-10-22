@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
 // import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface UserProfile {
@@ -51,59 +52,51 @@ export function Navigation() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+  const { user: authUser, loading: authLoading, signOut } = useAuth();
 
   useEffect(() => {
-    loadUser();
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
+    // Load user profile when auth user changes
+    const loadUserProfile = async () => {
+      if (authUser) {
         const { data: profile } = await supabase
           .from("users")
           .select("id, full_name, profile_image_url")
-          .eq("id", session.user.id)
+          .eq("id", authUser.id)
           .single();
 
         setUser(profile);
-      } else if (event === "SIGNED_OUT") {
+      } else {
         setUser(null);
       }
-    });
+    };
 
-    // Only run session expiration checks on non-auth pages
-    if (!pathname.startsWith("/auth")) {
-      // Session expiration notification
-      const checkSessionExpiration = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          toast.error("Your session has expired.", {
-            description: "Redirecting to login page...",
-            duration: 3000,
-          });
-          setTimeout(() => {
-            window.location.href = "/auth/login";
-          }, 3000);
-        }
-      };
-
-      // Check every 1 minute
-      const interval = setInterval(checkSessionExpiration, 60 * 1000);
-
-      // Initial check
-      checkSessionExpiration();
-
-      return () => {
-        subscription.unsubscribe();
-        clearInterval(interval);
-      };
-    } else {
-      return () => {
-        subscription.unsubscribe();
-      };
+    if (!authLoading) {
+      loadUserProfile();
     }
-  }, [pathname]);
+  }, [authUser, authLoading]);
+
+  // Only run session expiration checks on non-auth pages and when auth is loaded
+  useEffect(() => {
+    if (authLoading || pathname.startsWith("/auth")) return;
+
+    const checkSessionExpiration = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Your session has expired.", {
+          description: "Redirecting to login page...",
+          duration: 3000,
+        });
+        setTimeout(() => {
+          window.location.href = "/auth/login";
+        }, 3000);
+      }
+    };
+
+    // Check every 1 minute
+    const interval = setInterval(checkSessionExpiration, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [authLoading, pathname]);
 
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
@@ -160,17 +153,10 @@ export function Navigation() {
 
   const confirmSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error);
-        toast.error("Failed to sign out. Please try again.");
-        return;
-      }
-      // Use window.location for hard redirect to ensure clean logout
-      window.location.href = "/";
+      await signOut();
     } catch (error) {
-      console.error("Unexpected error during sign out:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out. Please try again.");
     }
   };
 
