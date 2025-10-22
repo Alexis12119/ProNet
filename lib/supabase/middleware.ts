@@ -31,17 +31,17 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-   // IMPORTANT: If you remove getUser() and you use server-side rendering
-   // with the Supabase client, your users may be randomly logged out.
-   let user = null;
-   try {
-     const { data } = await supabase.auth.getUser();
-     user = data?.user;
-   } catch (error) {
-     console.error("Auth error in middleware:", error);
-     // Return the response without redirect if auth fails
-     return supabaseResponse;
-   }
+    // IMPORTANT: If you remove getUser() and you use server-side rendering
+    // with the Supabase client, your users may be randomly logged out.
+    let user = null;
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data?.user;
+    } catch (error) {
+      console.error("Auth error in middleware:", error);
+      // Return the response without redirect if auth fails
+      return supabaseResponse;
+    }
 
    if (
      request.nextUrl.pathname !== "/" &&

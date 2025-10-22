@@ -9,7 +9,7 @@ ProNet is a modern, LinkedIn-inspired professional networking platform built for
 
 ## Features
 
-- **User Authentication**: Secure sign-up, login, and password reset via Supabase Auth.
+- **User Authentication**: Secure sign-up, login, password reset, and GitHub OAuth via Supabase Auth.
 - **Profile Management**: Create and edit professional profiles with skills, projects, and experience.
 - **Feed & Posts**: Share updates, images, and engage with the community.
 - **Messaging**: Real-time chat with file attachments.
@@ -32,6 +32,7 @@ ProNet is a modern, LinkedIn-inspired professional networking platform built for
 
 - Node.js 18+ and npm/yarn
 - Supabase account and project setup
+- GitHub OAuth App (for GitHub authentication)
 
 ### Installation
 
@@ -49,12 +50,25 @@ ProNet is a modern, LinkedIn-inspired professional networking platform built for
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file in the root directory with:
+    Create a `.env.local` file in the root directory with:
 
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+    ```
+
+4. Set up GitHub OAuth (Optional):
+    - Go to your [GitHub Developer Settings](https://github.com/settings/developers)
+    - Create a new OAuth App with these settings:
+      - **Application name**: ProNet (or your preferred name)
+      - **Homepage URL**: `http://localhost:3000` (for development) or your production URL
+      - **Authorization callback URL**: `https://your-project-ref.supabase.co/auth/v1/callback`
+    - Copy the Client ID and Client Secret
+    - In your Supabase dashboard:
+      - Go to Authentication > Providers
+      - Enable GitHub provider
+      - Enter your GitHub Client ID and Client Secret
+      - Save the changes
 
 4. Set up the database:
    Run the SQL scripts in the `scripts/` directory to create tables and policies:
@@ -115,6 +129,27 @@ pronet-linkedin-clone/
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run start` - Start production server
+
+## Troubleshooting
+
+### GitHub OAuth Issues
+
+If you encounter "redirect_uri is not associated with this application":
+
+1. **Check GitHub OAuth App Configuration**:
+   - Ensure the Authorization callback URL is set to: `https://your-project-ref.supabase.co/auth/v1/callback`
+   - Make sure you're using the correct Client ID and Client Secret in Supabase
+
+2. **Verify Supabase Configuration**:
+   - Go to Authentication > Providers in your Supabase dashboard
+   - Ensure GitHub provider is enabled with correct credentials
+
+3. **Environment Variables**:
+   - Ensure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are correctly set
+
+4. **Development vs Production**:
+   - For development, use `http://localhost:3000` as the Homepage URL in GitHub
+   - For production, use your actual domain
 
 ## Support
 

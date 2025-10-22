@@ -26,6 +26,7 @@ import {
   Search,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { toast } from "sonner";
 // import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface UserProfile {
@@ -71,8 +72,29 @@ export function Navigation() {
       }
     });
 
+    // Session expiration notification
+    const checkSessionExpiration = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Your session has expired.", {
+          description: "Redirecting to login page...",
+          duration: 3000,
+        });
+        setTimeout(() => {
+          window.location.href = "/auth/login";
+        }, 3000);
+      }
+    };
+
+    // Check every 1 minute
+    const interval = setInterval(checkSessionExpiration, 60 * 1000);
+
+    // Initial check
+    checkSessionExpiration();
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(interval);
     };
   }, []);
 
@@ -130,8 +152,19 @@ export function Navigation() {
   };
 
   const confirmSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        toast.error("Failed to sign out. Please try again.");
+        return;
+      }
+      // Use window.location for hard redirect to ensure clean logout
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Unexpected error during sign out:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    }
   };
 
   const getInitials = (name: string) => {
