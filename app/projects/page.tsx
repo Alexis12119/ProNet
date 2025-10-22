@@ -51,10 +51,16 @@ export default function ProjectsPage() {
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async () => {
       if (loading) {
         setLoading(false)
-        setError("Loading timed out. Please refresh the page.")
+        // Check if session is still valid
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          window.location.href = "/auth/login"
+        } else {
+          setError("Loading timed out. Please refresh the page.")
+        }
       }
     }, 10000) // 10 seconds
 

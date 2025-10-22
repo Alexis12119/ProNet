@@ -35,6 +35,8 @@ export default function LoginPage() {
     return email.includes("@") && email.includes(".");
   };
 
+
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -72,7 +74,8 @@ export default function LoginPage() {
         } as any,
       });
       if (error) throw error;
-      router.push("/dashboard");
+      // Use window.location for hard redirect to ensure middleware sees updated session
+      window.location.href = "/dashboard";
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

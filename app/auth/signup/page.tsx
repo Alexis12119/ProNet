@@ -45,10 +45,12 @@ export default function SignUpPage() {
   }
   const router = useRouter()
 
-   const validateEmail = (email: string) => {
-     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-     return emailRegex.test(email)
-   }
+    const validateEmail = (email: string) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    }
+
+
 
    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
      const { name, value } = e.target

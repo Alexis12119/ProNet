@@ -44,17 +44,23 @@ export default function EditProfilePage() {
       loadProfile();
     }, []);
 
-   // Add a timeout to prevent infinite loading
-   useEffect(() => {
-     const timeout = setTimeout(() => {
-       if (isLoading) {
-         setIsLoading(false);
-         setError("Loading timed out. Please refresh the page.");
-       }
-     }, 10000); // 10 seconds
+    // Add a timeout to prevent infinite loading
+    useEffect(() => {
+      const timeout = setTimeout(async () => {
+        if (isLoading) {
+          setIsLoading(false);
+          // Check if session is still valid
+          const { data: { session } } = await supabase.auth.getSession()
+          if (!session) {
+            window.location.href = "/auth/login";
+          } else {
+            setError("Loading timed out. Please refresh the page.");
+          }
+        }
+      }, 10000); // 10 seconds
 
-     return () => clearTimeout(timeout);
-   }, [isLoading]);
+      return () => clearTimeout(timeout);
+    }, [isLoading]);
 
     const loadProfile = async () => {
     try {
