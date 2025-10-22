@@ -72,31 +72,38 @@ export function Navigation() {
       }
     });
 
-    // Session expiration notification
-    const checkSessionExpiration = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Your session has expired.", {
-          description: "Redirecting to login page...",
-          duration: 3000,
-        });
-        setTimeout(() => {
-          window.location.href = "/auth/login";
-        }, 3000);
-      }
-    };
+    // Only run session expiration checks on non-auth pages
+    if (!pathname.startsWith("/auth")) {
+      // Session expiration notification
+      const checkSessionExpiration = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error("Your session has expired.", {
+            description: "Redirecting to login page...",
+            duration: 3000,
+          });
+          setTimeout(() => {
+            window.location.href = "/auth/login";
+          }, 3000);
+        }
+      };
 
-    // Check every 1 minute
-    const interval = setInterval(checkSessionExpiration, 60 * 1000);
+      // Check every 1 minute
+      const interval = setInterval(checkSessionExpiration, 60 * 1000);
 
-    // Initial check
-    checkSessionExpiration();
+      // Initial check
+      checkSessionExpiration();
 
-    return () => {
-      subscription.unsubscribe();
-      clearInterval(interval);
-    };
-  }, []);
+      return () => {
+        subscription.unsubscribe();
+        clearInterval(interval);
+      };
+    } else {
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
